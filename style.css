@@ -1,8 +1,22 @@
+:root {
+  --bg-color: #121212;
+  --text-color: #fff;
+  --editor-bg: #1f1f1f;
+  --blue: #00aaff;
+}
+
+body.light {
+  --bg-color: #f0f0f0;
+  --text-color: #000;
+  --editor-bg: #fff;
+}
+
 body {
   font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: #fff;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   padding: 20px;
+  transition: 0.3s;
 }
 .container {
   max-width: 800px;
@@ -10,24 +24,23 @@ body {
 }
 .controls {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
 }
 .editor {
-  background: #1f1f1f;
+  background: var(--editor-bg);
   border: 1px solid #444;
   padding: 10px;
   min-height: 200px;
-  color: #fff;
   font-size: 1.1em;
-  white-space: pre-wrap;
   overflow-y: auto;
 }
 .results {
   display: flex;
   justify-content: space-around;
   margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 button {
   background-color: #333;
@@ -49,20 +62,26 @@ button:hover {
   background: #00e676;
   width: 0%;
 }
-.wrong {
-  color: red;
-  text-decoration: underline;
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-top: 10px;
 }
-table {
-  width: 100%;
-  margin-top: 15px;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid #444;
-  padding: 8px;
+.calendar-day {
   text-align: center;
+  padding: 5px;
+  border: 1px solid #555;
+  border-radius: 5px;
 }
-th {
-  background-color: #222;
+.calendar-day.marked {
+  background-color: var(--blue);
+  color: white;
+}
+.calendar-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
 }

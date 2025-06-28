@@ -8,85 +8,51 @@ const timeSel = document.getElementById("time");
 const startBtn = document.getElementById("startBtn");
 const endBtn = document.getElementById("endBtn");
 const resetBtn = document.getElementById("resetBtn");
-const lbBody = document.querySelector("#leaderboard tbody");
-const daysDisplay = document.getElementById("typingDaysDisplay");
+const daysTypedEl = document.getElementById("daysTyped");
+const calendar = document.getElementById("calendar");
+const toggleModeBtn = document.getElementById("toggleMode");
 
+const monthYearLabel = document.getElementById("monthYear");
+const prevMonthBtn = document.getElementById("prevMonth");
+const nextMonthBtn = document.getElementById("nextMonth");
+
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
 let startTime, timerDur, intervalId;
-let totalChars = 0, correctChars = 0, wrongWords = 0;
 let isRunning = false;
-let checkedWords = {};
 
 function updateTimer() {
-  const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
-  const rem = timerDur - elapsedSec;
-  const m = Math.floor(rem / 60), s = rem % 60;
-  timeEl.textContent = `${m}:${String(s).padStart(2, "0")}`;
-  progressBar.style.width = `${(elapsedSec / timerDur * 100).toFixed(2)}%`;
-  if (rem <= 0) endTest();
-}
-
-function validateWord(word) {
-  word = word.toLowerCase().replace(/[^a-z]/gi, '');
-  if (!word || checkedWords[word] !== undefined) return;
-  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
-    .then(res => {
-      checkedWords[word] = res.ok;
-      highlightWords();
-    }).catch(() => {
-      checkedWords[word] = false;
-      highlightWords();
-    });
-}
-
-function highlightWords() {
-  const text = editor.innerText.trim();
-  const words = text.split(/\s+/);
-  wrongWords = 0;
-  const highlighted = words.map(word => {
-    const clean = word.toLowerCase().replace(/[^a-z]/gi, '');
-    if (!clean) return "";
-    if (checkedWords[clean] === false) {
-      wrongWords++;
-      return `<span class="wrong">${word}</span>`;
-    } else {
-      validateWord(clean);
-      return word;
-    }
-  }).join(" ");
-  editor.innerHTML = highlighted + " ";
-  updateCaret();
-  updateMetrics();
-}
-
-function updateCaret() {
-  editor.focus();
-  const range = document.createRange();
-  range.selectNodeContents(editor);
-  range.collapse(false);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = timerDur - elapsed;
+  const min = Math.floor(remaining / 60);
+  const sec = remaining % 60;
+  timeEl.textContent = `${min}:${String(sec).padStart(2, "0")}`;
+  progressBar.style.width = `${(elapsed / timerDur) * 100}%`;
+  if (remaining <= 0) endTest();
 }
 
 function updateMetrics() {
   const text = editor.innerText.trim();
-  totalChars = text.length;
-  correctChars = totalChars - wrongWords * 5;
+  const words = text.split(/\s+/).filter(w => w);
+  const wrongWords = words.filter(word => /[^a-zA-Z]/.test(word)).length;
+  const totalChars = text.length;
   const mins = (Date.now() - startTime) / 60000;
-  const wpm = Math.round((totalChars / 5) / mins) || 0;
-  const acc = totalChars ? Math.max(0, Math.round((correctChars / totalChars) * 100)) : 100;
+  const wpm = Math.round(words.length / mins) || 0;
+  const accuracy = totalChars
+    ? Math.max(0, Math.round(((totalChars - wrongWords * 5) / totalChars) * 100))
+    : 100;
+
   speedEl.textContent = wpm;
-  accEl.textContent = acc;
+  accEl.textContent = accuracy;
   wrongEl.textContent = wrongWords;
 }
 
 function startTest() {
   timerDur = parseInt(timeSel.value);
   startTime = Date.now();
-  editor.innerHTML = "";
+  editor.innerText = "";
   editor.contentEditable = true;
   editor.focus();
-  checkedWords = {};
   intervalId = setInterval(() => {
     updateTimer();
     updateMetrics();
@@ -95,17 +61,16 @@ function startTest() {
 }
 
 function endTest() {
-  editor.contentEditable = false;
   clearInterval(intervalId);
+  editor.contentEditable = false;
   updateMetrics();
-  updateLeaderboard(parseInt(speedEl.textContent), parseInt(accEl.textContent));
-  updateTypingDays();
   isRunning = false;
+  saveTypingDay();
 }
 
 function resetTest() {
   clearInterval(intervalId);
-  editor.innerHTML = "";
+  editor.innerText = "";
   editor.contentEditable = false;
   progressBar.style.width = "0%";
   speedEl.textContent = accEl.textContent = wrongEl.textContent = "0";
@@ -113,7 +78,69 @@ function resetTest() {
   isRunning = false;
 }
 
-// Keyboard Control
+function saveTypingDay() {
+  const today = new Date();
+  const dateStr = today.toISOString().split("T")[0];
+  let storedDays = JSON.parse(localStorage.getItem("typingDays")) || [];
+
+  if (!storedDays.includes(dateStr)) {
+    storedDays.push(dateStr);
+    localStorage.setItem("typingDays", JSON.stringify(storedDays));
+  }
+
+  daysTypedEl.textContent = storedDays.length;
+  renderCalendar(currentMonth, currentYear);
+}
+
+function renderCalendar(month, year) {
+  calendar.innerHTML = "";
+  const storedDays = JSON.parse(localStorage.getItem("typingDays")) || [];
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  monthYearLabel.textContent = `${new Date(year, month).toLocaleString("default", { month: "long" })} ${year}`;
+
+  for (let i = 0; i < firstDay; i++) {
+    calendar.innerHTML += `<div></div>`;
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+    const div = document.createElement("div");
+    div.className = "calendar-day";
+    div.innerText = i;
+    if (storedDays.includes(dayStr)) div.classList.add("marked");
+    calendar.appendChild(div);
+  }
+}
+
+toggleModeBtn.addEventListener("click", () => {
+  document.body.classList.toggle("light");
+});
+
+startBtn.onclick = startTest;
+endBtn.onclick = endTest;
+resetBtn.onclick = resetTest;
+
+prevMonthBtn.onclick = () => {
+  currentMonth--;
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  }
+  renderCalendar(currentMonth, currentYear);
+};
+
+nextMonthBtn.onclick = () => {
+  currentMonth++;
+  if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
+  renderCalendar(currentMonth, currentYear);
+};
+
+editor.addEventListener("input", updateMetrics);
 document.addEventListener("keydown", e => {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -121,50 +148,8 @@ document.addEventListener("keydown", e => {
   }
 });
 
-editor.addEventListener("input", highlightWords);
-startBtn.onclick = startTest;
-endBtn.onclick = endTest;
-resetBtn.onclick = resetTest;
-
-// Leaderboard
-function loadLB() {
-  return JSON.parse(localStorage.getItem("leaderboard") || "[]");
-}
-function updateLeaderboard(wpm, acc) {
-  const data = loadLB();
-  data.push({ date: new Date().toLocaleString(), wpm, acc });
-  data.sort((a, b) => b.wpm - a.wpm);
-  localStorage.setItem("leaderboard", JSON.stringify(data.slice(0, 5)));
-  renderLB();
-}
-function renderLB() {
-  const data = loadLB();
-  lbBody.innerHTML = "";
-  data.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.date}</td><td>${r.wpm}</td><td>${r.acc}%</td>`;
-    lbBody.appendChild(tr);
-  });
-}
-
-// Daily practice
-function getTodayDateStr() {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
-}
-function updateTypingDays() {
-  const today = getTodayDateStr();
-  let daysList = JSON.parse(localStorage.getItem("typingDaysList")) || [];
-  if (!daysList.includes(today)) {
-    daysList.push(today);
-    localStorage.setItem("typingDaysList", JSON.stringify(daysList));
-  }
-  renderTypingDays();
-}
-function renderTypingDays() {
-  const daysList = JSON.parse(localStorage.getItem("typingDaysList")) || [];
-  daysDisplay.textContent = `🗓️ You've practiced on ${daysList.length} day${daysList.length === 1 ? "" : "s"}`;
-}
-
-renderTypingDays();
-renderLB();
+window.onload = () => {
+  const storedDays = JSON.parse(localStorage.getItem("typingDays")) || [];
+  daysTypedEl.textContent = storedDays.length;
+  renderCalendar(currentMonth, currentYear);
+};

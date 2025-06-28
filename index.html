@@ -8,8 +8,9 @@
 </head>
 <body>
   <div class="container">
-    <h1>Typing Speed Tester (Live Dictionary)</h1>
-    <h3 id="typingDaysDisplay">🗓️ You've practiced on 0 days</h3>
+    <h1>Typing Speed Tester</h1>
+
+    <button id="toggleMode">Toggle Mode</button>
 
     <div class="controls">
       <label for="time">Time:</label>
@@ -17,7 +18,6 @@
         <option value="30">30 sec</option>
         <option value="60" selected>1 min</option>
         <option value="180">3 min</option>
-        <option value="600">10 min</option>
       </select>
       <button id="startBtn">Start</button>
       <button id="endBtn">End</button>
@@ -35,15 +35,16 @@
       <p>Accuracy: <span id="accuracy">0</span>%</p>
       <p>Wrong Words: <span id="wrongWords">0</span></p>
       <p>Time: <span id="timeDisplay">0:00</span></p>
+      <p>Days Typed: <span id="daysTyped">0</span></p>
     </div>
 
-    <h2>🏆 Leaderboard (Top 5)</h2>
-    <table id="leaderboard">
-      <thead>
-        <tr><th>Date</th><th>WPM</th><th>Accuracy</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h3>Typing History Calendar</h3>
+    <div class="calendar-controls">
+      <button id="prevMonth">&lt;</button>
+      <span id="monthYear"></span>
+      <button id="nextMonth">&gt;</button>
+    </div>
+    <div id="calendar"></div>
   </div>
 
   <script src="script.js"></script>
