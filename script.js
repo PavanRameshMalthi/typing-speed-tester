@@ -1,112 +1,224 @@
-// Typing Test
-const typingArea = document.getElementById("typingArea"), timeDisplay = document.getElementById("timeDisplay"),
-  speedDisplay = document.getElementById("speed"), accuracyDisplay = document.getElementById("accuracy"),
-  errorsDisplay = document.getElementById("errors"), missedAlert = document.getElementById("missedAlert");
-let isTyping = false, startTime, timerInterval, totalTyped = 0, errorCount = 0;
+// =======================
+// 🌙 Dark/Light Mode Toggle
+// =======================
+const body = document.body;
+const toggleBtn = document.getElementById('toggleMode');
+const savedMode = localStorage.getItem('theme') || 'dark';
+body.classList.add(savedMode);
 
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); isTyping ? stopTyping() : startTyping(); }
+toggleBtn.addEventListener('click', () => {
+  body.classList.toggle('dark');
+  body.classList.toggle('light');
+  const mode = body.classList.contains('dark') ? 'dark' : 'light';
+  localStorage.setItem('theme', mode);
+});
+
+// =======================
+// ✍️ Typing Test Setup
+// =======================
+const typingArea = document.getElementById('typingArea');
+const timeDisplay = document.getElementById('timeDisplay');
+const speedDisplay = document.getElementById('speed');
+const accuracyDisplay = document.getElementById('accuracy');
+const errorDisplay = document.getElementById('errors');
+const missedAlert = document.getElementById('missedAlert');
+
+let startTime, interval, started = false;
+let errorCount = 0, totalTyped = 0;
+
+// Load or initialize login dates
+let loginDates = JSON.parse(localStorage.getItem('loginDates')) || [];
+
+// Start or End Typing Test on Enter
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !started) {
+    e.preventDefault();
+    startTyping();
+  } else if (e.key === 'Enter' && started) {
+    e.preventDefault();
+    endTyping();
+  }
+});
+
+typingArea.addEventListener('input', () => {
+  const words = typingArea.value.trim().split(/\s+/);
+  const totalWords = words.length;
+  totalTyped++;
+
+  const wrongWords = words.filter(w => !dictionary.includes(w.toLowerCase()));
+  errorCount = wrongWords.length;
+
+  const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
+  const wpm = Math.round(totalWords / timeElapsed);
+  const accuracy = Math.round(((totalTyped - errorCount) / totalTyped) * 100);
+
+  speedDisplay.textContent = isFinite(wpm) ? wpm : 0;
+  accuracyDisplay.textContent = isFinite(accuracy) ? accuracy : 100;
+  errorDisplay.textContent = errorCount;
+
+  updateGraph(wpm, accuracy);
 });
 
 function startTyping() {
-  isTyping = true; typingArea.disabled = false; typingArea.value = ""; typingArea.focus();
-  totalTyped = 0; errorCount = 0; updateStats(0, 0, 0);
-  startTime = Date.now(); timerInterval = setInterval(updateTime, 1000);
-  missedAlert.textContent = "";
+  started = true;
+  typingArea.disabled = false;
+  typingArea.focus();
+  typingArea.value = '';
+  startTime = Date.now();
+  errorCount = 0;
+  totalTyped = 0;
+  interval = setInterval(updateTime, 1000);
+  updateTime();
+
+  recordLoginDay();
 }
-function stopTyping() {
-  isTyping = false; clearInterval(timerInterval); typingArea.disabled = true; logLoginDay();
-  addSession(); renderLeaderboard(); renderChart(); checkMissedDay();
+
+function endTyping() {
+  started = false;
+  clearInterval(interval);
+  typingArea.disabled = true;
+
+  const date = new Date().toLocaleDateString();
+  const speed = parseInt(speedDisplay.textContent);
+  const accuracy = parseInt(accuracyDisplay.textContent);
+  updateLeaderboard(date, speed, accuracy);
 }
+
 function updateTime() {
-  const sec = Math.floor((Date.now() - startTime) / 1000);
-  timeDisplay.textContent = sec + "s";
-  const text = typingArea.value.trim(), chars = text.length;
-  totalTyped = chars; errorCount = (text.match(/[^a-zA-Z0-9\s.,!?'"-]/g) || []).length;
-  const wpm = chars ? Math.round((chars / 5) / (sec / 60)) : 0;
-  const acc = chars ? Math.round(((chars - errorCount) / chars) * 100) : 0;
-  updateStats(wpm, acc, errorCount);
-}
-function updateStats(wpm, acc, err) {
-  speedDisplay.textContent = wpm; accuracyDisplay.textContent = acc; errorsDisplay.textContent = err;
+  const seconds = Math.floor((Date.now() - startTime) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  timeDisplay.textContent = `${minutes}m ${seconds % 60}s`;
 }
 
-// Sessions and Leaderboard
-function getSessions() {
-  return JSON.parse(localStorage.getItem("sessions") || "[]");
-}
-function addSession() {
-  const now = new Date().toLocaleString();
-  const wpm = parseInt(speedDisplay.textContent), acc = parseInt(accuracyDisplay.textContent);
-  const arr = getSessions(); arr.push({ date: now, wpm, acc });
-  arr.sort((a,b)=>b.wpm - a.wpm); localStorage.setItem("sessions", JSON.stringify(arr.slice(0,5)));
-}
-function renderLeaderboard() {
-  const tbody = document.querySelector("#leaderboard tbody"); tbody.innerHTML = "";
-  getSessions().forEach(r => {
-    const tr = document.createElement("tr"); tr.innerHTML = `<td>${r.date}</td><td>${r.wpm}</td><td>${r.acc}%</td>`;
-    tbody.appendChild(tr);
+// =======================
+// 📅 Calendar
+// =======================
+const calendar = document.getElementById('calendar');
+const monthYear = document.getElementById('monthYear');
+const prevMonth = document.getElementById('prevMonth');
+const nextMonth = document.getElementById('nextMonth');
+
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+
+function generateCalendar(month, year) {
+  calendar.innerHTML = '';
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const daysArray = Array(firstDay).fill('').concat([...Array(daysInMonth).keys()].map(d => d + 1));
+
+  daysArray.forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'calendar-day';
+    if (day) {
+      div.textContent = day;
+
+      const dateKey = `${year}-${month + 1}-${day}`;
+      if (loginDates.includes(dateKey)) {
+        div.classList.add('marked');
+      }
+    }
+    calendar.appendChild(div);
   });
+
+  const dateText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+  monthYear.textContent = dateText;
 }
 
-// Login Days & Missing Check
-let visitedDays = JSON.parse(localStorage.getItem("visitedDays")||"[]");
-function logLoginDay() {
-  const d = new Date(), key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  if (!visitedDays.includes(key)) { visitedDays.push(key); localStorage.setItem("visitedDays", JSON.stringify(visitedDays)); }
-  renderCalendar(), renderChart(), renderLeaderboard();
+function recordLoginDay() {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  if (!loginDates.includes(today)) {
+    loginDates.push(today);
+    localStorage.setItem('loginDates', JSON.stringify(loginDates));
+    checkMissedDays();
+  }
+  generateCalendar(currentMonth, currentYear);
 }
-function checkMissedDay() {
-  const today = new Date(), yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  if (!visitedDays.includes(`${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`)) {
-    missedAlert.textContent = "⚠️ You missed yesterday!";
+
+prevMonth.onclick = () => {
+  currentMonth = (currentMonth - 1 + 12) % 12;
+  if (currentMonth === 11) currentYear--;
+  generateCalendar(currentMonth, currentYear);
+};
+
+nextMonth.onclick = () => {
+  currentMonth = (currentMonth + 1) % 12;
+  if (currentMonth === 0) currentYear++;
+  generateCalendar(currentMonth, currentYear);
+};
+
+function checkMissedDays() {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`;
+  if (!loginDates.includes(yesterdayKey)) {
+    missedAlert.textContent = "🔔 You missed a day!";
+  } else {
+    missedAlert.textContent = "";
   }
 }
 
-// Calendar
-const calendar = document.getElementById("calendar"), monthYear = document.getElementById("monthYear"),
-  prevBtn = document.getElementById("prevMonth"), nextBtn = document.getElementById("nextMonth"),
-  wrapper = document.getElementById("calendarWrapper");
-let curMonth = (new Date()).getMonth(), curYear = (new Date()).getFullYear();
-
-function renderCalendar() {
-  calendar.innerHTML = "";
-  const first = new Date(curYear, curMonth,1).getDay(), daysIn = new Date(curYear,curMonth+1,0).getDate();
-  monthYear.textContent = `${new Date(curYear,curMonth).toLocaleString("default",{month:"long"})} ${curYear}`;
-  for(let i=0;i<first;i++) calendar.appendChild(document.createElement("div"));
-  for(let d=1; d<=daysIn; d++){
-    const key = `${curYear}-${curMonth}-${d}`, cell = document.createElement("div");
-    cell.className = "calendar-day"; cell.textContent = d;
-    if (visitedDays.includes(key)) cell.classList.add("marked");
-    calendar.appendChild(cell);
+// =======================
+// 📈 Chart.js: Graph Display
+// =======================
+const ctx = document.getElementById('trendChart').getContext('2d');
+let trendChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'Speed (WPM)',
+        data: [],
+        borderColor: '#007bff',
+        fill: false
+      },
+      {
+        label: 'Accuracy (%)',
+        data: [],
+        borderColor: '#28a745',
+        fill: false
+      }
+    ]
   }
-}
-prevBtn.onclick = ()=>{curMonth--; if(curMonth<0){curMonth=11;curYear--;} renderCalendar();}
-nextBtn.onclick = ()=>{curMonth++; if(curMonth>11){curMonth=0;curYear++;} renderCalendar();}
-let x0=0;
-wrapper.addEventListener("mousedown",e=>x0=e.clientX);
-wrapper.addEventListener("mouseup",e=>{if(e.clientX - x0>50) prevBtn.onclick(); else if(e.clientX-x0< -50) nextBtn.onclick();});
-wrapper.addEventListener("touchstart",e=>x0=e.touches[0].clientX);
-wrapper.addEventListener("touchend",e=>{const d=e.changedTouches[0].clientX - x0; if(d>50) prevBtn.onclick(); else if(d<-50) nextBtn.onclick();});
+});
 
-// Graph using Chart.js
-let chart = null;
-function renderChart() {
-  const data = getSessions().slice().reverse();
-  const labels = data.map(r=>r.date), speeds = data.map(r=>r.wpm), accs = data.map(r=>r.acc);
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById("trendChart"), {
-    type: 'line',
-    data: { labels, datasets:[
-      { label:'WPM', data:speeds, borderColor:'#00e676', fill:false },
-      { label:'Accuracy', data:accs, borderColor:'#ffca28', fill:false }
-    ]},
-    options:{responsive:true, scales:{y:{beginAtZero:true}}}
+function updateGraph(speed, accuracy) {
+  const now = new Date().toLocaleTimeString();
+  trendChart.data.labels.push(now);
+  trendChart.data.datasets[0].data.push(speed);
+  trendChart.data.datasets[1].data.push(accuracy);
+  trendChart.update();
+}
+
+// =======================
+// 🏆 Leaderboard
+// =======================
+function updateLeaderboard(date, wpm, accuracy) {
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+  leaderboard.push({ date, wpm, accuracy });
+  leaderboard.sort((a, b) => b.wpm - a.wpm);
+  const top5 = leaderboard.slice(0, 5);
+  localStorage.setItem('leaderboard', JSON.stringify(top5));
+  displayLeaderboard(top5);
+}
+
+function displayLeaderboard(entries) {
+  const tbody = document.querySelector('#leaderboard tbody');
+  tbody.innerHTML = '';
+  entries.forEach(e => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${e.date}</td><td>${e.wpm}</td><td>${e.accuracy}%</td>`;
+    tbody.appendChild(row);
   });
 }
 
-// Theme Toggle
-document.getElementById("toggleMode").onclick = ()=>document.body.classList.toggle("light");
 
-// Initialize
-renderLeaderboard(); renderCalendar(); renderChart(); checkMissedDay();
+
+// Initialize everything
+generateCalendar(currentMonth, currentYear);
+displayLeaderboard(JSON.parse(localStorage.getItem('leaderboard')) || []);
+checkMissedDays();
