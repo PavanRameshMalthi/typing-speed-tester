@@ -12,6 +12,7 @@ const timeSelect = document.getElementById("time");
 
 let startTime, interval, timerDuration, charIndex = 0;
 let totalTyped = 0, correctTyped = 0;
+let isRunning = false;
 
 const sounds = {
   correct: new Audio("sounds/correct.mp3"),
@@ -20,12 +21,7 @@ const sounds = {
 };
 
 const quotes = {
-  easy: [
-    "I love typing.",
-    "Coding is fun.",
-    "The cat sat.",
-    "Sun is hot.",
-  ],
+  easy: ["I love typing.", "Coding is fun.", "The cat sat.", "Sun is hot."],
   medium: [
     "Typing fast helps you become a better coder.",
     "Always test your code after writing.",
@@ -107,12 +103,14 @@ function startTest() {
   startTime = Date.now();
   renderQuote(getRandomQuote(level));
   interval = setInterval(updateTimer, 1000);
+  isRunning = true;
 }
 
 function endTest() {
   quoteInput.disabled = true;
   clearInterval(interval);
   sounds.done.play();
+  isRunning = false;
 }
 
 function resetTest() {
@@ -124,8 +122,21 @@ function resetTest() {
   speed.textContent = "0";
   accuracy.textContent = "0";
   quoteInput.disabled = true;
+  isRunning = false;
 }
 
 startBtn.addEventListener("click", startTest);
 endBtn.addEventListener("click", endTest);
 resetBtn.addEventListener("click", resetTest);
+
+// 🔑 ENTER KEY FEATURE
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault(); // Prevent newline in textarea
+    if (!isRunning) {
+      startTest();
+    } else {
+      endTest();
+    }
+  }
+});
