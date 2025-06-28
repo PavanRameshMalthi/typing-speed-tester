@@ -1,44 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Typing Speed Tester</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Typing Tracker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Typing Speed Tester</h1>
+  <button id="toggleMode">🌙 Toggle Mode</button>
 
-    <button id="toggleMode">Toggle Mode</button>
-
-    <div class="controls">
-      <label for="time">Time:</label>
-      <select id="time">
-        <option value="30">30 sec</option>
-        <option value="60" selected>1 min</option>
-        <option value="180">3 min</option>
-      </select>
-      <button id="startBtn">Start</button>
-      <button id="endBtn">End</button>
-      <button id="resetBtn">Reset</button>
+  <div class="typing-container">
+    <h2>Typing Test</h2>
+    <textarea id="typingArea" placeholder="Start typing here..." disabled></textarea>
+    <div class="info">
+      <p>⏱ Time: <span id="timeDisplay">0s</span></p>
+      <p>🚀 Speed: <span id="speed">0</span> WPM</p>
+      <p>🎯 Accuracy: <span id="accuracy">0</span>%</p>
+      <p>❌ Errors: <span id="errors">0</span></p>
     </div>
+    <p class="note">Press <strong>Enter</strong> to Start/Stop</p>
+  </div>
 
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-
-    <div class="editor" contenteditable="true" id="editor" spellcheck="false"></div>
-
-    <div class="results">
-      <p>Speed: <span id="speed">0</span> WPM</p>
-      <p>Accuracy: <span id="accuracy">0</span>%</p>
-      <p>Wrong Words: <span id="wrongWords">0</span></p>
-      <p>Time: <span id="timeDisplay">0:00</span></p>
-      <p>Days Typed: <span id="daysTyped">0</span></p>
-    </div>
-
-    <h3>Typing History Calendar</h3>
+  <div class="calendar-wrapper" id="calendarWrapper">
     <div class="calendar-controls">
       <button id="prevMonth">&lt;</button>
       <span id="monthYear"></span>
