@@ -1,142 +1,167 @@
 const quoteDisplay = document.getElementById("quoteDisplay");
 const quoteInput = document.getElementById("quoteInput");
+const speedEl = document.getElementById("speed");
+const accEl = document.getElementById("accuracy");
+const timeEl = document.getElementById("timeDisplay");
+const progressBar = document.getElementById("progressBar");
+const diffSel = document.getElementById("difficulty");
+const timeSel = document.getElementById("time");
 const startBtn = document.getElementById("startBtn");
 const endBtn = document.getElementById("endBtn");
 const resetBtn = document.getElementById("resetBtn");
-const speed = document.getElementById("speed");
-const accuracy = document.getElementById("accuracy");
-const timeDisplay = document.getElementById("timeDisplay");
-const progressBar = document.getElementById("progressBar");
-const difficultySelect = document.getElementById("difficulty");
-const timeSelect = document.getElementById("time");
+const lbBody = document.querySelector("#leaderboard tbody");
+const streakDisplay = document.getElementById("streakDisplay");
+const missedMessage = document.getElementById("missedMessage");
 
-let startTime, interval, timerDuration, charIndex = 0;
-let totalTyped = 0, correctTyped = 0;
-let isRunning = false;
+let startTime, timerDur, intervalId, charIdx=0, totalTyped=0, corrTyped=0;
+let isRunning=false;
 
 const sounds = {
-  correct: new Audio("sounds/correct.mp3"),
-  error: new Audio("sounds/error.mp3"),
-  done: new Audio("sounds/done.mp3"),
+  correct:new Audio("sounds/correct.mp3"),
+  error:new Audio("sounds/error.mp3"),
+  done:new Audio("sounds/done.mp3")
 };
 
 const quotes = {
-  easy: ["I love typing.", "Coding is fun.", "The cat sat.", "Sun is hot."],
-  medium: [
-    "Typing fast helps you become a better coder.",
-    "Always test your code after writing.",
-    "Practice makes perfect.",
-    "HTML and CSS build beautiful websites.",
-  ],
-  hard: [
-    "The quick brown fox jumps over the lazy dog while barking at the full moon.",
-    "JavaScript is a powerful language used in web development and beyond.",
-    "Consistency in learning leads to long-term success in programming.",
-  ]
+  easy:["I love typing.","Coding is fun.","The cat sat.","Sun is hot."],
+  medium:["Typing fast helps you become a better coder.","Always test your code after writing.","Practice makes perfect.","HTML and CSS build beautiful websites."],
+  hard:["The quick brown fox jumps over the lazy dog while barking at the full moon.","JavaScript is a powerful language used in web development and beyond.","Consistency in learning leads to long-term success in programming."]
 };
 
-function getRandomQuote(level) {
-  const q = quotes[level];
-  return q[Math.floor(Math.random() * q.length)];
+function pickQuote() {
+  const arr=quotes[diffSel.value];
+  return arr[Math.floor(Math.random()*arr.length)];
 }
 
-function renderQuote(quote) {
-  quoteDisplay.innerHTML = "";
-  quote.split("").forEach(char => {
-    const span = document.createElement("span");
-    span.innerText = char;
-    quoteDisplay.appendChild(span);
+function renderQuote(txt){
+  quoteDisplay.innerHTML="";
+  txt.split("").forEach(ch=>{
+    const sp=document.createElement("span");
+    sp.innerText=ch;
+    quoteDisplay.appendChild(sp);
   });
-  quoteInput.value = "";
-  quoteInput.disabled = false;
-  quoteInput.focus();
-  charIndex = 0;
-  totalTyped = 0;
-  correctTyped = 0;
+  quoteInput.value=""; quoteInput.disabled=false; quoteInput.focus();
+  charIdx=0; totalTyped=0; corrTyped=0;
   updateMetrics();
 }
 
-function updateMetrics() {
-  const elapsed = (Date.now() - startTime) / 60000;
-  const wpm = Math.round((totalTyped / 5) / elapsed);
-  const acc = totalTyped === 0 ? 100 : Math.round((correctTyped / totalTyped) * 100);
-  speed.textContent = wpm || 0;
-  accuracy.textContent = acc;
+function updateMetrics(){
+  const mins=(Date.now()-startTime)/60000;
+  const wpm= Math.round((totalTyped/5)/mins)||0;
+  const acc= totalTyped?Math.round(corrTyped/totalTyped*100):100;
+  speedEl.textContent=wpm;
+  accEl.textContent=acc;
 }
 
-quoteInput.addEventListener("input", () => {
-  const quoteSpans = quoteDisplay.querySelectorAll("span");
-  const value = quoteInput.value.split("");
+quoteInput.addEventListener("input",()=>{
+  const spans=quoteDisplay.querySelectorAll("span"), val=quoteInput.value;
   totalTyped++;
-  if (charIndex >= quoteSpans.length) return;
-
-  if (value[charIndex] === quoteSpans[charIndex].innerText) {
-    quoteSpans[charIndex].classList.add("correct");
-    quoteSpans[charIndex].classList.remove("incorrect");
-    correctTyped++;
-    sounds.correct.play();
-  } else {
-    quoteSpans[charIndex].classList.add("incorrect");
-    quoteSpans[charIndex].classList.remove("correct");
-    sounds.error.play();
+  if(charIdx<spans.length){
+    if(val[charIdx]===spans[charIdx].innerText){
+      spans[charIdx].classList.add("correct");
+      corrTyped++; sounds.correct.play();
+    } else { spans[charIdx].classList.add("incorrect"); sounds.error.play(); }
+    charIdx++;
   }
-  charIndex++;
   updateMetrics();
 });
 
-function updateTimer() {
-  const elapsed = Math.floor((Date.now() - startTime) / 1000);
-  const remaining = timerDuration - elapsed;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  timeDisplay.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
-  progressBar.style.width = `${((elapsed / timerDuration) * 100).toFixed(2)}%`;
-
-  if (remaining <= 0) {
-    endTest();
-  }
+function updateTimer(){
+  const elapsedSec=Math.floor((Date.now()-startTime)/1000);
+  const rem=timerDur-elapsedSec;
+  const m=Math.floor(rem/60), s=rem%60;
+  timeEl.textContent=`${m}:${String(s).padStart(2,"0")}`;
+  progressBar.style.width=`${(elapsedSec/timerDur*100).toFixed(2)}%`;
+  if(rem<=0) endTest();
 }
 
-function startTest() {
-  const level = difficultySelect.value;
-  timerDuration = parseInt(timeSelect.value);
-  startTime = Date.now();
-  renderQuote(getRandomQuote(level));
-  interval = setInterval(updateTimer, 1000);
-  isRunning = true;
+function startTest(){
+  timerDur=parseInt(timeSel.value);
+  startTime=Date.now();
+  renderQuote(pickQuote());
+  intervalId=setInterval(updateTimer,1000);
+  isRunning=true;
 }
-
-function endTest() {
-  quoteInput.disabled = true;
-  clearInterval(interval);
+function endTest(){
+  quoteInput.disabled=true;
+  clearInterval(intervalId);
   sounds.done.play();
-  isRunning = false;
+  updateLeaderboard(parseInt(speedEl.textContent),parseInt(accEl.textContent));
+  updateDailyStreak(); // 🔥 streak updated here
+  isRunning=false;
+}
+function resetTest(){
+  clearInterval(intervalId);
+  quoteInput.disabled=true;
+  quoteDisplay.innerHTML="";
+  progressBar.style.width="0%";
+  speedEl.textContent=accEl.textContent="0";
+  timeEl.textContent="0:00";
+  isRunning=false;
 }
 
-function resetTest() {
-  clearInterval(interval);
-  quoteInput.value = "";
-  quoteDisplay.innerHTML = "";
-  timeDisplay.textContent = "0:00";
-  progressBar.style.width = "0%";
-  speed.textContent = "0";
-  accuracy.textContent = "0";
-  quoteInput.disabled = true;
-  isRunning = false;
-}
-
-startBtn.addEventListener("click", startTest);
-endBtn.addEventListener("click", endTest);
-resetBtn.addEventListener("click", resetTest);
-
-// 🔑 ENTER KEY FEATURE
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault(); // Prevent newline in textarea
-    if (!isRunning) {
-      startTest();
-    } else {
-      endTest();
-    }
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    isRunning? endTest() : startTest();
   }
 });
+startBtn.onclick=startTest; endBtn.onclick=endTest; resetBtn.onclick=resetTest;
+
+// 🏆 Leaderboard
+function loadLB(){
+  const data=JSON.parse(localStorage.getItem("leaderboard"))||[];
+  return data.sort((a,b)=>b.wpm-a.wpm).slice(0,5);
+}
+function updateLeaderboard(wpm,acc){
+  const data=loadLB();
+  data.push({date:new Date().toLocaleString(),wpm,acc});
+  data.sort((a,b)=>b.wpm-a.wpm);
+  localStorage.setItem("leaderboard",JSON.stringify(data.slice(0,5)));
+  renderLB();
+}
+function renderLB(){
+  lbBody.innerHTML="";
+  loadLB().forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r.date}</td><td>${r.wpm}</td><td>${r.acc}%</td>`;
+    lbBody.appendChild(tr);
+  });
+}
+
+// 🔥 Daily Streak Tracking
+function getTodayDateStr() {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
+function getYesterdayDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+}
+function updateDailyStreak() {
+  const today = getTodayDateStr();
+  const yesterday = getYesterdayDateStr();
+  const storedDate = localStorage.getItem("lastPracticeDate");
+  let streak = parseInt(localStorage.getItem("dailyStreak")) || 0;
+
+  if (storedDate === today) return;
+  if (storedDate === yesterday) {
+    streak++;
+    missedMessage.textContent = "";
+  } else if (storedDate && storedDate !== today) {
+    missedMessage.textContent = "⚠️ You missed a day!";
+  } else {
+    streak = 1;
+  }
+
+  localStorage.setItem("lastPracticeDate", today);
+  localStorage.setItem("dailyStreak", streak);
+  renderStreak();
+}
+function renderStreak() {
+  const streak = localStorage.getItem("dailyStreak") || 0;
+  streakDisplay.textContent = `🔥 Daily Streak: ${streak} Day${streak == 1 ? "" : "s"}`;
+}
+renderStreak();
+renderLB();
