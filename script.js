@@ -1,179 +1,130 @@
-const quoteEl = document.getElementById("quote");
-const inputEl = document.getElementById("input");
-const timerEl = document.getElementById("timer");
-const wpmEl = document.getElementById("wpm");
-const accuracyEl = document.getElementById("accuracy");
-const bestScoreEl = document.getElementById("best-score");
-const durationSelect = document.getElementById("duration");
-const startBtn = document.getElementById("start-btn");
-const endBtn = document.getElementById("end-btn");
-const resetBtn = document.getElementById("reset-btn");
-const progressFill = document.getElementById("progress-fill");
-const ctx = document.getElementById("resultsChart").getContext("2d");
+const quoteDisplay = document.getElementById("quoteDisplay");
+const quoteInput = document.getElementById("quoteInput");
+const startBtn = document.getElementById("startBtn");
+const endBtn = document.getElementById("endBtn");
+const resetBtn = document.getElementById("resetBtn");
+const speed = document.getElementById("speed");
+const accuracy = document.getElementById("accuracy");
+const timeDisplay = document.getElementById("timeDisplay");
+const progressBar = document.getElementById("progressBar");
+const difficultySelect = document.getElementById("difficulty");
+const timeSelect = document.getElementById("time");
 
-let chart;
-let timer, countdown, timeLimit;
-let started = false;
-let currentQuote = "";
-let bestWPM = localStorage.getItem("bestWPM") || 0;
-let statsData = [];
+let startTime, interval, timerDuration, charIndex = 0;
+let totalTyped = 0, correctTyped = 0;
 
-let quotes = [
-  "The quick brown fox jumps over the lazy dog.",
-  "Typing fast is a valuable skill in many jobs.",
-  "Practice every day to improve your typing speed.",
-  "JavaScript is a powerful programming language.",
-  "Focus and accuracy are key to typing tests."
-];
+const sounds = {
+  correct: new Audio("sounds/correct.mp3"),
+  error: new Audio("sounds/error.mp3"),
+  done: new Audio("sounds/done.mp3"),
+};
 
-bestScoreEl.textContent = `🏆 Best WPM: ${bestWPM}`;
+const quotes = {
+  easy: [
+    "I love typing.",
+    "Coding is fun.",
+    "The cat sat.",
+    "Sun is hot.",
+  ],
+  medium: [
+    "Typing fast helps you become a better coder.",
+    "Always test your code after writing.",
+    "Practice makes perfect.",
+    "HTML and CSS build beautiful websites.",
+  ],
+  hard: [
+    "The quick brown fox jumps over the lazy dog while barking at the full moon.",
+    "JavaScript is a powerful language used in web development and beyond.",
+    "Consistency in learning leads to long-term success in programming.",
+  ]
+};
 
-function getRandomQuote() {
-  return quotes[Math.floor(Math.random() * quotes.length)];
+function getRandomQuote(level) {
+  const q = quotes[level];
+  return q[Math.floor(Math.random() * q.length)];
+}
+
+function renderQuote(quote) {
+  quoteDisplay.innerHTML = "";
+  quote.split("").forEach(char => {
+    const span = document.createElement("span");
+    span.innerText = char;
+    quoteDisplay.appendChild(span);
+  });
+  quoteInput.value = "";
+  quoteInput.disabled = false;
+  quoteInput.focus();
+  charIndex = 0;
+  totalTyped = 0;
+  correctTyped = 0;
+  updateMetrics();
+}
+
+function updateMetrics() {
+  const elapsed = (Date.now() - startTime) / 60000;
+  const wpm = Math.round((totalTyped / 5) / elapsed);
+  const acc = totalTyped === 0 ? 100 : Math.round((correctTyped / totalTyped) * 100);
+  speed.textContent = wpm || 0;
+  accuracy.textContent = acc;
+}
+
+quoteInput.addEventListener("input", () => {
+  const quoteSpans = quoteDisplay.querySelectorAll("span");
+  const value = quoteInput.value.split("");
+  totalTyped++;
+  if (charIndex >= quoteSpans.length) return;
+
+  if (value[charIndex] === quoteSpans[charIndex].innerText) {
+    quoteSpans[charIndex].classList.add("correct");
+    quoteSpans[charIndex].classList.remove("incorrect");
+    correctTyped++;
+    sounds.correct.play();
+  } else {
+    quoteSpans[charIndex].classList.add("incorrect");
+    quoteSpans[charIndex].classList.remove("correct");
+    sounds.error.play();
+  }
+  charIndex++;
+  updateMetrics();
+});
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = timerDuration - elapsed;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  timeDisplay.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+  progressBar.style.width = `${((elapsed / timerDuration) * 100).toFixed(2)}%`;
+
+  if (remaining <= 0) {
+    endTest();
+  }
 }
 
 function startTest() {
-  currentQuote = getRandomQuote();
-  quoteEl.textContent = currentQuote;
-  inputEl.value = "";
-  inputEl.disabled = false;
-  inputEl.focus();
-
-  timeLimit = parseInt(durationSelect.value);
-  countdown = timeLimit;
-  started = false;
-  statsData = [];
-
-  updateTimerDisplay(countdown);
-  updateProgressBar();
-  wpmEl.textContent = "0";
-  accuracyEl.textContent = "0";
-  endBtn.disabled = false;
-  resetBtn.disabled = false;
-  clearInterval(timer);
-}
-
-function startTimer() {
-  timer = setInterval(() => {
-    countdown--;
-    updateTimerDisplay(countdown);
-    updateLiveStats();
-    updateProgressBar();
-
-    if (countdown <= 0) {
-      endTest();
-    }
-  }, 1000);
-}
-
-function updateTimerDisplay(secondsLeft) {
-  const mins = Math.floor(secondsLeft / 60);
-  const secs = secondsLeft % 60;
-  timerEl.textContent = `${mins > 0 ? mins + " min " : ""}${secs} sec`;
-}
-
-function updateProgressBar() {
-  const percent = ((timeLimit - countdown) / timeLimit) * 100;
-  progressFill.style.width = `${percent}%`;
-}
-
-function updateLiveStats() {
-  const typedText = inputEl.value.trim();
-  const timePassed = timeLimit - countdown || 1;
-  const wordsTyped = typedText.split(/\s+/).filter(w => w !== "").length;
-  const wpm = Math.round((wordsTyped / timePassed) * 60);
-
-  let correctChars = 0;
-  for (let i = 0; i < typedText.length && i < currentQuote.length; i++) {
-    if (typedText[i] === currentQuote[i]) correctChars++;
-  }
-
-  const accuracy = Math.round((correctChars / currentQuote.length) * 100);
-
-  wpmEl.textContent = isNaN(wpm) ? 0 : wpm;
-  accuracyEl.textContent = isNaN(accuracy) ? 0 : accuracy;
-
-  statsData.push({ second: timeLimit - countdown, wpm, accuracy });
+  const level = difficultySelect.value;
+  timerDuration = parseInt(timeSelect.value);
+  startTime = Date.now();
+  renderQuote(getRandomQuote(level));
+  interval = setInterval(updateTimer, 1000);
 }
 
 function endTest() {
-  clearInterval(timer);
-  inputEl.disabled = true;
-  updateLiveStats();
-  endBtn.disabled = true;
-  drawChart();
-
-  const finalWPM = parseInt(wpmEl.textContent);
-  if (finalWPM > bestWPM) {
-    bestWPM = finalWPM;
-    localStorage.setItem("bestWPM", bestWPM);
-    bestScoreEl.textContent = `🏆 Best WPM: ${bestWPM}`;
-  }
+  quoteInput.disabled = true;
+  clearInterval(interval);
+  sounds.done.play();
 }
 
 function resetTest() {
-  clearInterval(timer);
-  inputEl.value = "";
-  inputEl.disabled = true;
-  quoteEl.textContent = "Click \"Start Test\" to begin...";
-  timerEl.textContent = "0 sec";
-  wpmEl.textContent = "0";
-  accuracyEl.textContent = "0";
-  progressFill.style.width = "0%";
-  endBtn.disabled = true;
-  resetBtn.disabled = true;
-  statsData = [];
-  if (chart) chart.destroy();
+  clearInterval(interval);
+  quoteInput.value = "";
+  quoteDisplay.innerHTML = "";
+  timeDisplay.textContent = "0:00";
+  progressBar.style.width = "0%";
+  speed.textContent = "0";
+  accuracy.textContent = "0";
+  quoteInput.disabled = true;
 }
-
-function drawChart() {
-  const labels = statsData.map(data => `${data.second}s`);
-  const wpmData = statsData.map(data => data.wpm);
-  const accuracyData = statsData.map(data => data.accuracy);
-
-  if (chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "WPM",
-          data: wpmData,
-          borderColor: "#00bfff",
-          backgroundColor: "rgba(0,191,255,0.2)",
-          fill: true,
-        },
-        {
-          label: "Accuracy (%)",
-          data: accuracyData,
-          borderColor: "#00ff99",
-          backgroundColor: "rgba(0,255,153,0.2)",
-          fill: true,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true, max: 100 }
-      }
-    }
-  });
-}
-
-inputEl.addEventListener("input", () => {
-  if (!started) {
-    started = true;
-    startTimer();
-  }
-
-  updateLiveStats();
-
-  if (inputEl.value.trim() === currentQuote) {
-    endTest();
-  }
-});
 
 startBtn.addEventListener("click", startTest);
 endBtn.addEventListener("click", endTest);
