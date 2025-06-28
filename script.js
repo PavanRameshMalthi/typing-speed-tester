@@ -10,8 +10,7 @@ const startBtn = document.getElementById("startBtn");
 const endBtn = document.getElementById("endBtn");
 const resetBtn = document.getElementById("resetBtn");
 const lbBody = document.querySelector("#leaderboard tbody");
-const streakDisplay = document.getElementById("streakDisplay");
-const missedMessage = document.getElementById("missedMessage");
+const daysDisplay = document.getElementById("typingDaysDisplay");
 
 let startTime, timerDur, intervalId, charIdx=0, totalTyped=0, corrTyped=0;
 let isRunning=false;
@@ -60,7 +59,10 @@ quoteInput.addEventListener("input",()=>{
     if(val[charIdx]===spans[charIdx].innerText){
       spans[charIdx].classList.add("correct");
       corrTyped++; sounds.correct.play();
-    } else { spans[charIdx].classList.add("incorrect"); sounds.error.play(); }
+    } else {
+      spans[charIdx].classList.add("incorrect");
+      sounds.error.play();
+    }
     charIdx++;
   }
   updateMetrics();
@@ -82,14 +84,16 @@ function startTest(){
   intervalId=setInterval(updateTimer,1000);
   isRunning=true;
 }
+
 function endTest(){
   quoteInput.disabled=true;
   clearInterval(intervalId);
   sounds.done.play();
   updateLeaderboard(parseInt(speedEl.textContent),parseInt(accEl.textContent));
-  updateDailyStreak(); // 🔥 streak updated here
+  updateTypingDays(); // 🔄 track total practice days
   isRunning=false;
 }
+
 function resetTest(){
   clearInterval(intervalId);
   quoteInput.disabled=true;
@@ -106,7 +110,9 @@ document.addEventListener("keydown",e=>{
     isRunning? endTest() : startTest();
   }
 });
-startBtn.onclick=startTest; endBtn.onclick=endTest; resetBtn.onclick=resetTest;
+startBtn.onclick=startTest;
+endBtn.onclick=endTest;
+resetBtn.onclick=resetTest;
 
 // 🏆 Leaderboard
 function loadLB(){
@@ -129,39 +135,24 @@ function renderLB(){
   });
 }
 
-// 🔥 Daily Streak Tracking
+// 🗓️ Total Typing Days
 function getTodayDateStr() {
   const d = new Date();
   return d.toISOString().split("T")[0];
 }
-function getYesterdayDateStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-}
-function updateDailyStreak() {
+function updateTypingDays() {
   const today = getTodayDateStr();
-  const yesterday = getYesterdayDateStr();
-  const storedDate = localStorage.getItem("lastPracticeDate");
-  let streak = parseInt(localStorage.getItem("dailyStreak")) || 0;
-
-  if (storedDate === today) return;
-  if (storedDate === yesterday) {
-    streak++;
-    missedMessage.textContent = "";
-  } else if (storedDate && storedDate !== today) {
-    missedMessage.textContent = "⚠️ You missed a day!";
-  } else {
-    streak = 1;
+  let daysList = JSON.parse(localStorage.getItem("typingDaysList")) || [];
+  if (!daysList.includes(today)) {
+    daysList.push(today);
+    localStorage.setItem("typingDaysList", JSON.stringify(daysList));
   }
+  renderTypingDays();
+}
+function renderTypingDays() {
+  const daysList = JSON.parse(localStorage.getItem("typingDaysList")) || [];
+  daysDisplay.textContent = `🗓️ You've practiced on ${daysList.length} day${daysList.length === 1 ? "" : "s"}`;
+}
 
-  localStorage.setItem("lastPracticeDate", today);
-  localStorage.setItem("dailyStreak", streak);
-  renderStreak();
-}
-function renderStreak() {
-  const streak = localStorage.getItem("dailyStreak") || 0;
-  streakDisplay.textContent = `🔥 Daily Streak: ${streak} Day${streak == 1 ? "" : "s"}`;
-}
-renderStreak();
+renderTypingDays();
 renderLB();
