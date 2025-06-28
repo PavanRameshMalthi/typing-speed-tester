@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Typing Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Typing Tracker v2</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <button id="toggleMode">🌙 Toggle Mode</button>
@@ -19,17 +19,29 @@
       <p>❌ Errors: <span id="errors">0</span></p>
     </div>
     <p class="note">Press <strong>Enter</strong> to Start/Stop</p>
+    <div id="missedAlert" class="alert"></div>
+  </div>
+
+  <div class="graph-container">
+    <canvas id="trendChart"></canvas>
+  </div>
+
+  <div class="leaderboard-container">
+    <h3>🏆 Leaderboard (Top 5 WPM)</h3>
+    <table id="leaderboard">
+      <thead><tr><th>Date</th><th>WPM</th><th>Accuracy</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <div class="calendar-wrapper" id="calendarWrapper">
     <div class="calendar-controls">
-      <button id="prevMonth">&lt;</button>
-      <span id="monthYear"></span>
-      <button id="nextMonth">&gt;</button>
+      <button id="prevMonth">&lt;</button><span id="monthYear"></span><button id="nextMonth">&gt;</button>
     </div>
     <div id="calendar"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

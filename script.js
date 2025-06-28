@@ -1,162 +1,112 @@
-// Typing Test Logic
-const typingArea = document.getElementById("typingArea");
-const timeDisplay = document.getElementById("timeDisplay");
-const speedDisplay = document.getElementById("speed");
-const accuracyDisplay = document.getElementById("accuracy");
-const errorsDisplay = document.getElementById("errors");
+// Typing Test
+const typingArea = document.getElementById("typingArea"), timeDisplay = document.getElementById("timeDisplay"),
+  speedDisplay = document.getElementById("speed"), accuracyDisplay = document.getElementById("accuracy"),
+  errorsDisplay = document.getElementById("errors"), missedAlert = document.getElementById("missedAlert");
+let isTyping = false, startTime, timerInterval, totalTyped = 0, errorCount = 0;
 
-let isTyping = false;
-let startTime, timerInterval;
-let totalTyped = 0, errorCount = 0;
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    if (!isTyping) {
-      startTyping();
-    } else {
-      stopTyping();
-    }
-  }
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); isTyping ? stopTyping() : startTyping(); }
 });
 
 function startTyping() {
-  isTyping = true;
-  typingArea.disabled = false;
-  typingArea.focus();
-  typingArea.value = "";
-  totalTyped = 0;
-  errorCount = 0;
-  updateStats(0, 0, 0);
-  startTime = new Date();
-  timerInterval = setInterval(updateTime, 1000);
+  isTyping = true; typingArea.disabled = false; typingArea.value = ""; typingArea.focus();
+  totalTyped = 0; errorCount = 0; updateStats(0, 0, 0);
+  startTime = Date.now(); timerInterval = setInterval(updateTime, 1000);
+  missedAlert.textContent = "";
 }
-
 function stopTyping() {
-  isTyping = false;
-  clearInterval(timerInterval);
-  typingArea.disabled = true;
-  logLoginDay(); // log to calendar
+  isTyping = false; clearInterval(timerInterval); typingArea.disabled = true; logLoginDay();
+  addSession(); renderLeaderboard(); renderChart(); checkMissedDay();
 }
-
 function updateTime() {
-  const elapsedSec = Math.floor((new Date() - startTime) / 1000);
-  timeDisplay.textContent = `${elapsedSec}s`;
-  const words = typingArea.value.trim().split(/\s+/);
-  const chars = typingArea.value.trim().length;
-  totalTyped = chars;
-
-  const speed = Math.round((chars / 5) / (elapsedSec / 60));
-  const accuracy = totalTyped === 0 ? 0 : Math.round(((totalTyped - errorCount) / totalTyped) * 100);
-
-  updateStats(speed, accuracy, errorCount);
+  const sec = Math.floor((Date.now() - startTime) / 1000);
+  timeDisplay.textContent = sec + "s";
+  const text = typingArea.value.trim(), chars = text.length;
+  totalTyped = chars; errorCount = (text.match(/[^a-zA-Z0-9\s.,!?'"-]/g) || []).length;
+  const wpm = chars ? Math.round((chars / 5) / (sec / 60)) : 0;
+  const acc = chars ? Math.round(((chars - errorCount) / chars) * 100) : 0;
+  updateStats(wpm, acc, errorCount);
+}
+function updateStats(wpm, acc, err) {
+  speedDisplay.textContent = wpm; accuracyDisplay.textContent = acc; errorsDisplay.textContent = err;
 }
 
-typingArea.addEventListener("input", () => {
-  const value = typingArea.value;
-  const wrongChars = value.match(/[^a-zA-Z0-9\s.,!?'"-]/g);
-  errorCount = wrongChars ? wrongChars.length : 0;
-});
-
-function updateStats(wpm, acc, errors) {
-  speedDisplay.textContent = wpm;
-  accuracyDisplay.textContent = acc;
-  errorsDisplay.textContent = errors;
+// Sessions and Leaderboard
+function getSessions() {
+  return JSON.parse(localStorage.getItem("sessions") || "[]");
+}
+function addSession() {
+  const now = new Date().toLocaleString();
+  const wpm = parseInt(speedDisplay.textContent), acc = parseInt(accuracyDisplay.textContent);
+  const arr = getSessions(); arr.push({ date: now, wpm, acc });
+  arr.sort((a,b)=>b.wpm - a.wpm); localStorage.setItem("sessions", JSON.stringify(arr.slice(0,5)));
+}
+function renderLeaderboard() {
+  const tbody = document.querySelector("#leaderboard tbody"); tbody.innerHTML = "";
+  getSessions().forEach(r => {
+    const tr = document.createElement("tr"); tr.innerHTML = `<td>${r.date}</td><td>${r.wpm}</td><td>${r.acc}%</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-// Calendar Logic
-const calendar = document.getElementById("calendar");
-const monthYear = document.getElementById("monthYear");
-const prevMonthBtn = document.getElementById("prevMonth");
-const nextMonthBtn = document.getElementById("nextMonth");
-const calendarWrapper = document.getElementById("calendarWrapper");
-const toggleModeBtn = document.getElementById("toggleMode");
-
-let currentDate = new Date();
-let currentMonth = currentDate.getMonth();
-let currentYear = currentDate.getFullYear();
-const visitedDays = getVisitedDays();
-
-function getVisitedDays() {
-  const stored = localStorage.getItem("visitedDays");
-  const today = formatDate(new Date());
-  const all = stored ? JSON.parse(stored) : [];
-  if (!all.includes(today)) {
-    all.push(today);
-    localStorage.setItem("visitedDays", JSON.stringify(all));
-  }
-  return all;
-}
-
+// Login Days & Missing Check
+let visitedDays = JSON.parse(localStorage.getItem("visitedDays")||"[]");
 function logLoginDay() {
-  const today = formatDate(new Date());
-  if (!visitedDays.includes(today)) {
-    visitedDays.push(today);
-    localStorage.setItem("visitedDays", JSON.stringify(visitedDays));
-    renderCalendar(currentMonth, currentYear);
+  const d = new Date(), key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  if (!visitedDays.includes(key)) { visitedDays.push(key); localStorage.setItem("visitedDays", JSON.stringify(visitedDays)); }
+  renderCalendar(), renderChart(), renderLeaderboard();
+}
+function checkMissedDay() {
+  const today = new Date(), yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  if (!visitedDays.includes(`${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`)) {
+    missedAlert.textContent = "⚠️ You missed yesterday!";
   }
 }
 
-function formatDate(date) {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
+// Calendar
+const calendar = document.getElementById("calendar"), monthYear = document.getElementById("monthYear"),
+  prevBtn = document.getElementById("prevMonth"), nextBtn = document.getElementById("nextMonth"),
+  wrapper = document.getElementById("calendarWrapper");
+let curMonth = (new Date()).getMonth(), curYear = (new Date()).getFullYear();
 
-function renderCalendar(month, year) {
+function renderCalendar() {
   calendar.innerHTML = "";
-  const firstDay = new Date(year, month).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  monthYear.textContent = `${new Date(year, month).toLocaleString("default", { month: "long" })} ${year}`;
-
-  for (let i = 0; i < firstDay; i++) {
-    const blank = document.createElement("div");
-    calendar.appendChild(blank);
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = `${year}-${month}-${day}`;
-    const cell = document.createElement("div");
-    cell.className = "calendar-day";
-    cell.textContent = day;
-    if (visitedDays.includes(dateKey)) {
-      cell.classList.add("marked");
-    }
+  const first = new Date(curYear, curMonth,1).getDay(), daysIn = new Date(curYear,curMonth+1,0).getDate();
+  monthYear.textContent = `${new Date(curYear,curMonth).toLocaleString("default",{month:"long"})} ${curYear}`;
+  for(let i=0;i<first;i++) calendar.appendChild(document.createElement("div"));
+  for(let d=1; d<=daysIn; d++){
+    const key = `${curYear}-${curMonth}-${d}`, cell = document.createElement("div");
+    cell.className = "calendar-day"; cell.textContent = d;
+    if (visitedDays.includes(key)) cell.classList.add("marked");
     calendar.appendChild(cell);
   }
 }
+prevBtn.onclick = ()=>{curMonth--; if(curMonth<0){curMonth=11;curYear--;} renderCalendar();}
+nextBtn.onclick = ()=>{curMonth++; if(curMonth>11){curMonth=0;curYear++;} renderCalendar();}
+let x0=0;
+wrapper.addEventListener("mousedown",e=>x0=e.clientX);
+wrapper.addEventListener("mouseup",e=>{if(e.clientX - x0>50) prevBtn.onclick(); else if(e.clientX-x0< -50) nextBtn.onclick();});
+wrapper.addEventListener("touchstart",e=>x0=e.touches[0].clientX);
+wrapper.addEventListener("touchend",e=>{const d=e.changedTouches[0].clientX - x0; if(d>50) prevBtn.onclick(); else if(d<-50) nextBtn.onclick();});
 
-function prevMonth() {
-  currentMonth--;
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  }
-  renderCalendar(currentMonth, currentYear);
+// Graph using Chart.js
+let chart = null;
+function renderChart() {
+  const data = getSessions().slice().reverse();
+  const labels = data.map(r=>r.date), speeds = data.map(r=>r.wpm), accs = data.map(r=>r.acc);
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("trendChart"), {
+    type: 'line',
+    data: { labels, datasets:[
+      { label:'WPM', data:speeds, borderColor:'#00e676', fill:false },
+      { label:'Accuracy', data:accs, borderColor:'#ffca28', fill:false }
+    ]},
+    options:{responsive:true, scales:{y:{beginAtZero:true}}}
+  });
 }
 
-function nextMonth() {
-  currentMonth++;
-  if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
-  renderCalendar(currentMonth, currentYear);
-}
+// Theme Toggle
+document.getElementById("toggleMode").onclick = ()=>document.body.classList.toggle("light");
 
-let startX = 0;
-
-calendarWrapper.addEventListener("mousedown", (e) => startX = e.clientX);
-calendarWrapper.addEventListener("mouseup", (e) => handleSwipe(e.clientX - startX));
-calendarWrapper.addEventListener("touchstart", (e) => startX = e.touches[0].clientX);
-calendarWrapper.addEventListener("touchend", (e) => handleSwipe(e.changedTouches[0].clientX - startX));
-
-function handleSwipe(deltaX) {
-  const threshold = 50;
-  if (deltaX > threshold) prevMonth();
-  else if (deltaX < -threshold) nextMonth();
-}
-
-// Theme toggle
-toggleModeBtn.onclick = () => document.body.classList.toggle("light");
-
-// Init
-renderCalendar(currentMonth, currentYear);
+// Initialize
+renderLeaderboard(); renderCalendar(); renderChart(); checkMissedDay();
