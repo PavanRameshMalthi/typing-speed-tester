@@ -12,8 +12,8 @@
     <h1>Typing Speed Tester</h1>
 
     <div class="controls">
-      <button onclick="toggleTheme()">Switch Theme</button>
-      <select id="timer-select">
+      <button onclick="switchTheme()">Switch Theme</button>
+      <select id="timerSelect">
         <option value="30">30 sec</option>
         <option value="60" selected>1 min</option>
         <option value="120">2 min</option>
@@ -23,23 +23,24 @@
       <button onclick="resetTest()">Reset</button>
     </div>
 
-    <p id="missed-days-msg"></p>
+    <p id="missedMsg"></p>
 
-    <textarea id="test-area" placeholder="Start your test..." disabled></textarea>
-
+    <textarea id="testArea" placeholder="Type here..." disabled></textarea>
     <div class="stats">
       WPM: <span id="wpm">0</span> |
       Accuracy: <span id="accuracy">0%</span> |
-      Wrong: <span id="wrong-words">0</span>
+      Wrong: <span id="wrong">0</span>
     </div>
 
-    <div class="calendar-compact" id="calendar-box"></div>
+    <div id="calendarBox" class="calendar-compact"></div>
 
-    <canvas id="performanceChart"></canvas>
+    <canvas id="chart"></canvas>
 
     <h2>🏆 Leaderboard (Time Only)</h2>
-    <table><thead><tr><th>Time</th><th>WPM</th><th>Acc</th></tr></thead>
-      <tbody id="leaderboard-body"></tbody></table>
+    <table>
+      <thead><tr><th>Time</th><th>WPM</th><th>Acc</th></tr></thead>
+      <tbody id="leaderboardBody"></tbody>
+    </table>
   </div>
 
   <script src="script.js"></script>

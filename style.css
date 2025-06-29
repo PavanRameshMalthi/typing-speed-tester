@@ -1,37 +1,41 @@
 :root {
-  --clr-bg: #121212; --clr-text: #eeeeee;
-  --clr-accent: #66d9ef;
-  --clr-wpm-light: #66d9ef; --clr-acc-light: #33cc33;
-  --clr-wpm-dark: #a2dffe; --clr-acc-dark: #b3ff66;
+  --bg-default: #121212; --text-default: #eeeeee; --accent: #66d9ef;
+  --wpm-default: #66d9ef; --acc-default: #33cc33;
+  --wpm-light: #007bff; --acc-light: #28a745;
+  --wpm-ocean: #2aa198; --acc-ocean: #cb4b16;
 }
 
-/* Theme presets */
-body.theme-default { background: var(--clr-bg); color: var(--clr-text); }
-body.theme-default textarea { background: #1e1e1e; color: #eeeeee; }
-body.theme-light { background: #f8f9fa; color: #333333; }
-body.theme-light textarea { background: #ffffff; color: #333333; }
-body.theme-ocean { background: #002b36; color: #839496; }
-body.theme-ocean textarea { background: #073642; color: #839496; }
-
-.container { max-width:800px; margin:auto; padding:20px; }
+body { margin:0; font-family:Arial,sans-serif; transition:.3s background,.3s color; }
+.container { max-width:800px; margin:20px auto; padding:10px; }
 .controls { margin-bottom:15px; }
-textarea { width:100%; height:120px; padding:10px; border-radius:6px; margin-bottom:15px; }
-button, select { padding:6px 10px; margin-right:10px; border:none; border-radius:4px; cursor:pointer; }
-
-.stats span { font-weight:bold; }
-.stats #wpm { color: var(--clr-wpm-dark); }
-.stats #accuracy { color: var(--clr-acc-dark); }
-body.theme-light .stats #wpm { color: var(--clr-wpm-light); }
-body.theme-light .stats #accuracy { color: var(--clr-acc-light); }
-body.theme-ocean .stats #wpm { color: #2aa198; }
-body.theme-ocean .stats #accuracy { color: #cb4b16; }
-
-.calendar-compact { width:100%; height:200px; overflow:hidden; margin-bottom:20px; }
-.calendar-compact .month { text-align:center;font-weight:bold; margin-bottom:5px; }
-.calendar-compact .days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.calendar-compact .day { padding:5px; text-align:center; border-radius:4px; }
-.marked { background: var(--clr-accent); color:white; }
+textarea { width:100%; height:120px; padding:10px; margin-bottom:10px; border-radius:6px; font-size:16px; resize:none; }
+.stats { margin-bottom:20px; font-size:18px; }
+.calendar-compact { width:100%; height:230px; overflow:hidden; margin-bottom:20px; border-radius:6px; border:1px solid #888; background:rgba(0,0,0,0.1); user-select:none; }
+.calendar-header { text-align:center; font-weight:bold; padding:6px 0; background:#333; color:#fff; }
+.calendar-weekdays, .calendar-days { display:grid; grid-template-columns:repeat(7,1fr); }
+.calendar-weekdays div, .calendar-days div { text-align:center; padding:4px 0; }
+.calendar-weekdays { background:#444; color:#ddd; }
+.calendar-days { transform: translateX(0); transition:transform .2s ease; }
+.calendar-days .day { padding:10px 0; margin:2px; border-radius:4px; }
+.marked { background:var(--accent); color:#fff; }
 
 canvas { width:100%; height:300px; margin-bottom:20px; }
-table { width:100%; border-collapse:collapse; }
-th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+.controls button, .controls select { padding:6px 10px; margin-right:8px; border:none; border-radius:4px; cursor:pointer; }
+table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+th,td { border:1px solid #ccc; padding:8px; text-align:center; }
+
+/* Themes */
+body.theme-default { background:var(--bg-default); color:var(--text-default); }
+body.theme-default textarea { background:#1e1e1e; color:var(--text-default); }
+body.theme-light { background:#f8f9fa; color:#333; }
+body.theme-light textarea { background:#fff; color:#333; }
+body.theme-ocean { background:#002b36; color:#839496; }
+body.theme-ocean textarea { background:#073642; color:#839496; }
+
+/* Stats coloring */
+body.theme-default #wpm { color:var(--wpm-default); }
+body.theme-default #accuracy { color:var(--acc-default); }
+body.theme-light #wpm { color:var(--wpm-light); }
+body.theme-light #accuracy { color:var(--acc-light); }
+body.theme-ocean #wpm { color:var(--wpm-ocean); }
+body.theme-ocean #accuracy { color:var(--acc-ocean); }
