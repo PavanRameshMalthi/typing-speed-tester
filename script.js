@@ -1,165 +1,207 @@
-let isTestRunning = false;
-let timer;
-let startTime;
-let typedWords = [];
-let wrongCount = 0;
-let correctCount = 0;
-let history = [];
-let currentTestNumber = 1;
-
-const textarea = document.getElementById("customInput");
+const paragraphDisplay = document.getElementById("paragraphDisplay");
+const typingInput = document.getElementById("typingInput");
+const startBtn = document.getElementById("startBtn");
+const endBtn = document.getElementById("endBtn");
+const timeDisplay = document.getElementById("timeDisplay");
 const wpmDisplay = document.getElementById("wpm");
 const accuracyDisplay = document.getElementById("accuracy");
-const wrongDisplay = document.getElementById("wrong");
-const correctDisplay = document.getElementById("correct");
-const durationSelect = document.getElementById("duration");
-const chartCanvas = document.getElementById("performanceChart").getContext("2d");
-const historyList = document.getElementById("testHistory");
-const calendarBox = document.getElementById("calendarBox");
+const correctWordsDisplay = document.getElementById("correctWords");
+const wrongWordsDisplay = document.getElementById("wrongWords");
+const mistakeWordsDisplay = document.getElementById("mistakeWords");
+const testDurationInput = document.getElementById("testDuration");
+const retestBtn = document.getElementById("retestBtn");
+const themeSelect = document.getElementById("themeSelect");
+const calendarContainer = document.getElementById("calendarContainer");
+const historyList = document.getElementById("historyList");
 
-let chart = new Chart(chartCanvas, {
-  type: "line",
-  data: {
-    labels: [],
-    datasets: [
-      {
-        label: "WPM",
-        data: [],
-        borderColor: "#007bff",
-        borderWidth: 2,
-        fill: false,
-      },
-      {
-        label: "Accuracy (%)",
-        data: [],
-        borderColor: "#28a745",
-        borderWidth: 2,
-        fill: false,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        labels: {
-          color: getComputedStyle(document.body).getPropertyValue('--text-color')
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') }
-      },
-      y: {
-        ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') }
-      }
-    }
-  }
-});
+let timer;
+let totalTime = 60;
+let startTime;
+let correctWords = 0;
+let wrongWords = 0;
+let chart;
+let typedWordArray = [];
+let mistakeMap = {};
+
+function generateParagraph() {
+  const sampleText = "Start typing anything you like here. The system will calculate speed, accuracy, and errors.";
+  paragraphDisplay.innerText = sampleText;
+}
 
 function startTest() {
-  if (isTestRunning) return;
-  resetStats();
-  isTestRunning = true;
+  generateParagraph();
+  typedWordArray = [];
+  mistakeMap = {};
+  typingInput.value = "";
+  typingInput.disabled = false;
+  typingInput.focus();
+  totalTime = parseInt(testDurationInput.value) || 60;
+  timeDisplay.textContent = `${totalTime}s`;
   startTime = Date.now();
-  const duration = parseInt(durationSelect.value);
-  timer = setTimeout(endTest, duration * 1000);
+  correctWords = 0;
+  wrongWords = 0;
+  clearInterval(timer);
+  timer = setInterval(updateTimer, 1000);
 }
 
 function endTest() {
-  isTestRunning = false;
-  clearTimeout(timer);
-  const timeTaken = (Date.now() - startTime) / 1000;
-  const totalWords = typedWords.length;
-  const wpm = Math.round((totalWords / timeTaken) * 60);
-  const accuracy = Math.round(((correctCount - wrongCount) / correctCount) * 100) || 0;
+  clearInterval(timer);
+  typingInput.disabled = true;
+  const timeUsed = (Date.now() - startTime) / 60000;
+  const typedWords = typingInput.value.trim().split(/\s+/);
+  correctWords = 0;
+  wrongWords = 0;
 
-  updateStats(wpm, accuracy, wrongCount, correctCount);
-  saveHistory(wpm, accuracy);
-  updateChart(wpm, accuracy);
-}
-
-function resetStats() {
-  typedWords = [];
-  wrongCount = 0;
-  correctCount = 0;
-  textarea.value = "";
-  updateStats(0, 100, 0, 0);
-}
-
-function updateStats(wpm, accuracy, wrong = 0, correct = 0) {
-  wpmDisplay.textContent = wpm;
-  accuracyDisplay.textContent = accuracy + "%";
-  wrongDisplay.textContent = wrong;
-  correctDisplay.textContent = correct;
-}
-
-function saveHistory(wpm, accuracy) {
-  const now = new Date();
-  const time = now.toLocaleTimeString();
-  const dateKey = now.toISOString().split("T")[0];
-
-  history.push({
-    id: `Test ${history.length + 1}`,
-    date: dateKey,
-    time,
-    wpm,
-    accuracy,
-    wrong: wrongCount,
+  typedWords.forEach(word => {
+    if (word !== "") {
+      typedWordArray.push(word);
+      if (/^[a-zA-Z]+$/.test(word)) correctWords++;
+      else {
+        wrongWords++;
+        mistakeMap[word] = (mistakeMap[word] || 0) + 1;
+      }
+    }
   });
 
-  updateHistoryUI();
-  updateCalendar(dateKey);
+  const wpm = Math.round(correctWords / timeUsed);
+  const totalTyped = correctWords + wrongWords;
+  const accuracy = totalTyped ? Math.round((correctWords / totalTyped) * 100) : 0;
+
+  wpmDisplay.textContent = wpm;
+  accuracyDisplay.textContent = `${accuracy}%`;
+  correctWordsDisplay.textContent = correctWords;
+  wrongWordsDisplay.textContent = wrongWords;
+
+  let maxMistake = "";
+  let maxCount = 0;
+  for (let word in mistakeMap) {
+    if (mistakeMap[word] > maxCount) {
+      maxCount = mistakeMap[word];
+      maxMistake = word;
+    }
+  }
+  mistakeWordsDisplay.textContent = maxMistake || "-";
+
+  saveHistory(wpm, accuracy, correctWords, wrongWords);
+  updateChart(wpm, accuracy);
+  markLogin();
 }
 
-function updateHistoryUI() {
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = totalTime - elapsed;
+  if (remaining <= 0) {
+    timeDisplay.textContent = "0s";
+    endTest();
+  } else {
+    timeDisplay.textContent = `${remaining}s`;
+  }
+}
+
+function resetTest() {
+  clearInterval(timer);
+  typingInput.value = "";
+  paragraphDisplay.innerText = "";
+  typingInput.disabled = false;
+  timeDisplay.textContent = `${testDurationInput.value}s`;
+  correctWordsDisplay.textContent = "0";
+  wrongWordsDisplay.textContent = "0";
+  wpmDisplay.textContent = "0";
+  accuracyDisplay.textContent = "0%";
+  mistakeWordsDisplay.textContent = "-";
+}
+
+function saveHistory(wpm, accuracy, correct, wrong) {
+  const history = JSON.parse(localStorage.getItem("typingHistory") || "[]");
+  const now = new Date();
+  history.push({
+    time: now.toLocaleTimeString(),
+    wpm,
+    accuracy,
+    correct,
+    wrong
+  });
+  localStorage.setItem("typingHistory", JSON.stringify(history));
+  displayHistory();
+}
+
+function displayHistory() {
+  const history = JSON.parse(localStorage.getItem("typingHistory") || "[]");
   historyList.innerHTML = "";
-  history.forEach((h, i) => {
+  history.slice(-10).reverse().forEach(entry => {
     const li = document.createElement("li");
-    li.textContent = `${h.id} - WPM: ${h.wpm}, Accuracy: ${h.accuracy}%, Wrong: ${h.wrong} (${h.time})`;
+    li.textContent = `⏰ ${entry.time} – ✅ ${entry.wpm} WPM, 🎯 ${entry.accuracy}%, ✅ ${entry.correct}, ❌ ${entry.wrong}`;
     historyList.appendChild(li);
   });
 }
 
-function updateCalendar(dateKey) {
-  const dateElem = document.createElement("div");
-  dateElem.textContent = dateKey;
-  dateElem.classList.add("highlight-date");
-  calendarBox.appendChild(dateElem);
+function setupChart() {
+  const ctx = document.getElementById("wpmChart").getContext("2d");
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: "WPM",
+          borderColor: "#007bff",
+          data: [],
+          fill: false
+        },
+        {
+          label: "Accuracy",
+          borderColor: "#28a745",
+          data: [],
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: getComputedStyle(document.body).getPropertyValue("--text-color")
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: getComputedStyle(document.body).getPropertyValue("--text-color")
+          }
+        },
+        y: {
+          ticks: {
+            color: getComputedStyle(document.body).getPropertyValue("--text-color")
+          }
+        }
+      }
+    }
+  });
 }
 
 function updateChart(wpm, accuracy) {
-  chart.data.labels.push(`Test ${chart.data.labels.length + 1}`);
+  const label = new Date().toLocaleTimeString();
+  chart.data.labels.push(label);
   chart.data.datasets[0].data.push(wpm);
   chart.data.datasets[1].data.push(accuracy);
   chart.update();
 }
 
-document.getElementById("startTest").addEventListener("click", startTest);
-document.getElementById("resetTest").addEventListener("click", resetStats);
-document.getElementById("themeToggle").addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  document.body.classList.toggle("light");
-});
-
-textarea.addEventListener("input", () => {
-  if (!isTestRunning) return;
-  const value = textarea.value.trim();
-  typedWords = value.split(/\s+/);
-  correctCount = typedWords.length;
-  wrongCount = typedWords.filter(word => word === "wrong").length; // Simulated logic
-  const accuracy = Math.round(((correctCount - wrongCount) / correctCount) * 100) || 0;
-  const wpm = Math.round((correctCount / ((Date.now() - startTime) / 1000)) * 60);
-  updateStats(wpm, accuracy, wrongCount, correctCount);
-});
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    if (!isTestRunning) {
-      startTest();
-    } else {
-      endTest();
-    }
+function markLogin() {
+  const now = new Date();
+  const dateKey = now.toISOString().split("T")[0];
+  const days = JSON.parse(localStorage.getItem("loginDays") || "[]");
+  if (!days.includes(dateKey)) {
+    days.push(dateKey);
+    localStorage.setItem("loginDays", JSON.stringify(days));
   }
-});
+  showCalendar(days);
+}
+
+function showCalendar(days) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const totalDays = new Date(year, month + 1, 0).g

@@ -1,87 +1,159 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  transition: all 0.3s ease;
-}
-
 :root {
-  --light-bg: #ffffff;
-  --light-text: #333333;
-  --light-primary: #007bff;
-  --light-alt-bg: #f8f9fa;
-
-  --dark-bg: #121212;
-  --dark-text: #eeeeee;
-  --dark-primary: #66d9ef;
-  --dark-alt-bg: #1e1e1e;
-}
-
-/* Theme classes */
-body.light {
-  --bg-color: var(--light-bg);
-  --text-color: var(--light-text);
-  --primary: var(--light-primary);
-  --alt-bg: var(--light-alt-bg);
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --primary-color: #007bff;
+  --secondary-bg: #f8f9fa;
 }
 
 body.dark {
-  --bg-color: var(--dark-bg);
-  --text-color: var(--dark-text);
-  --primary: var(--dark-primary);
-  --alt-bg: var(--dark-alt-bg);
+  --bg-color: #121212;
+  --text-color: #eeeeee;
+  --primary-color: #66d9ef;
+  --secondary-bg: #1e1e1e;
+}
+
+body.blue {
+  --bg-color: #e3f2fd;
+  --text-color: #0d47a1;
+  --primary-color: #2196f3;
+  --secondary-bg: #bbdefb;
+}
+
+body.classic {
+  --bg-color: #fff8e1;
+  --text-color: #3e2723;
+  --primary-color: #ff9800;
+  --secondary-bg: #ffe0b2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background 0.3s, color 0.3s;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 900px;
   margin: auto;
   padding: 20px;
 }
 
-textarea {
-  width: 100%;
-  height: 100px;
-  margin-top: 10px;
-  font-size: 16px;
-}
-
-.stats {
+header {
   display: flex;
   justify-content: space-between;
-  margin: 15px 0;
+  align-items: center;
 }
 
-.highlight {
-  font-weight: bold;
-  color: var(--primary);
+header h1 {
+  font-size: 2rem;
+}
+
+.theme-toggle select {
+  padding: 5px;
 }
 
 .controls {
+  margin-top: 20px;
   display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin: 10px 0;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-button {
-  padding: 8px 14px;
-  cursor: pointer;
-  background: var(--primary);
-  color: #fff;
-  border: none;
+.controls select,
+.controls input,
+.controls button {
+  padding: 8px 12px;
+  font-size: 1rem;
+}
+
+.typing-area {
+  margin: 20px 0;
+  background-color: var(--secondary-bg);
+  padding: 15px;
   border-radius: 5px;
 }
 
-.calendar-box {
-  max-width: 100%;
-  height: auto;
+#paragraphDisplay {
   padding: 10px;
-  background: var(--alt-bg);
-  margin-top: 10px;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
+  min-height: 60px;
 }
 
-#historyContainer ul {
-  list-style: none;
+#typingInput {
+  width: 100%;
+  height: 100px;
+  font-size: 1.1rem;
+  padding: 10px;
+  resize: none;
+}
+
+.results p {
+  font-size: 1.1rem;
+  margin: 8px 0;
+}
+
+#wpm,
+#accuracy {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.chart-section {
+  margin-top: 30px;
+}
+
+.calendar-section {
+  margin-top: 30px;
+}
+
+#calendarContainer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  background-color: var(--secondary-bg);
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.calendar-day {
+  padding: 10px;
+  text-align: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.calendar-day.highlighted {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.calendar-day:hover {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.history-section {
+  margin-top: 30px;
+}
+
+#historyList {
+  list-style-type: none;
   padding: 0;
+}
+
+#historyList li {
+  padding: 10px;
+  background-color: var(--secondary-bg);
+  margin: 5px 0;
+  border-radius: 4px;
 }
