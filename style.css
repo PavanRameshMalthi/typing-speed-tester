@@ -1,139 +1,37 @@
 :root {
-  --bg-light: #ffffff;
-  --text-light: #333333;
-  --primary-light: #007bff;
-  --secondary-bg-light: #f8f9fa;
-
-  --bg-dark: #121212;
-  --text-dark: #eeeeee;
-  --primary-dark: #66d9ef;
-  --secondary-bg-dark: #1e1e1e;
-
-  --speed-color-light: #0056b3;
-  --accuracy-color-light: #1c7c2b;
-
-  --speed-color-dark: #a2dffe;
-  --accuracy-color-dark: #b3ff66;
+  --clr-bg: #121212; --clr-text: #eeeeee;
+  --clr-accent: #66d9ef;
+  --clr-wpm-light: #66d9ef; --clr-acc-light: #33cc33;
+  --clr-wpm-dark: #a2dffe; --clr-acc-dark: #b3ff66;
 }
 
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  transition: background-color 0.3s, color 0.3s;
-}
-body.light {
-  background: var(--bg-light);
-  color: var(--text-light);
-}
-body.dark {
-  background: var(--bg-dark);
-  color: var(--text-dark);
-}
+/* Theme presets */
+body.theme-default { background: var(--clr-bg); color: var(--clr-text); }
+body.theme-default textarea { background: #1e1e1e; color: #eeeeee; }
+body.theme-light { background: #f8f9fa; color: #333333; }
+body.theme-light textarea { background: #ffffff; color: #333333; }
+body.theme-ocean { background: #002b36; color: #839496; }
+body.theme-ocean textarea { background: #073642; color: #839496; }
 
-header {
-  text-align: right;
-  margin-bottom: 20px;
-}
+.container { max-width:800px; margin:auto; padding:20px; }
+.controls { margin-bottom:15px; }
+textarea { width:100%; height:120px; padding:10px; border-radius:6px; margin-bottom:15px; }
+button, select { padding:6px 10px; margin-right:10px; border:none; border-radius:4px; cursor:pointer; }
 
-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: var(--primary-dark);
-  color: #fff;
-}
-body.light button {
-  background: var(--primary-light);
-}
+.stats span { font-weight:bold; }
+.stats #wpm { color: var(--clr-wpm-dark); }
+.stats #accuracy { color: var(--clr-acc-dark); }
+body.theme-light .stats #wpm { color: var(--clr-wpm-light); }
+body.theme-light .stats #accuracy { color: var(--clr-acc-light); }
+body.theme-ocean .stats #wpm { color: #2aa198; }
+body.theme-ocean .stats #accuracy { color: #cb4b16; }
 
-.typing-test, .leaderboard, .graph, .calendar-wrapper {
-  max-width: 600px;
-  margin: 30px auto;
-}
+.calendar-compact { width:100%; height:200px; overflow:hidden; margin-bottom:20px; }
+.calendar-compact .month { text-align:center;font-weight:bold; margin-bottom:5px; }
+.calendar-compact .days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.calendar-compact .day { padding:5px; text-align:center; border-radius:4px; }
+.marked { background: var(--clr-accent); color:white; }
 
-textarea {
-  width: 100%;
-  height: 120px;
-  font-size: 16px;
-  padding: 10px;
-  margin-bottom: 15px;
-  resize: none;
-  background: transparent;
-  color: inherit;
-  border: 1px solid #888;
-  border-radius: 6px;
-}
-
-.info p {
-  margin: 5px 0;
-}
-.alert {
-  margin: 10px 0;
-  color: #ff4444;
-  font-weight: bold;
-}
-
-#speed {
-  font-weight: bold;
-  color: var(--speed-color-dark);
-}
-body.light #speed {
-  color: var(--speed-color-light);
-}
-#accuracy {
-  font-weight: bold;
-  color: var(--accuracy-color-dark);
-}
-body.light #accuracy {
-  color: var(--accuracy-color-light);
-}
-
-.graph canvas {
-  width: 100% !important;
-  height: auto !important;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-th, td {
-  padding: 8px;
-  border: 1px solid #aaa;
-  text-align: center;
-}
-
-.calendar-wrapper {
-  overflow: hidden;
-  user-select: none;
-}
-.calendar-controls {
-  text-align: center;
-  margin-bottom: 10px;
-}
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7,1fr);
-  gap: 5px;
-}
-.calendar-day {
-  padding: 10px 0;
-  border-radius: 4px;
-  background: var(--secondary-bg-dark);
-  color: var(--text-dark);
-}
-body.light .calendar-day {
-  background: var(--secondary-bg-light);
-  color: var(--text-light);
-}
-.calendar-day.marked {
-  background: var(--primary-dark);
-  color: #fff;
-}
-body.light .calendar-day.marked {
-  background: var(--primary-light);
-  color: #fff;
-}
+canvas { width:100%; height:300px; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; }
+th, td { border:1px solid #ccc; padding:8px; text-align:center; }

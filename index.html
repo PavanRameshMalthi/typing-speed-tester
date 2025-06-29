@@ -3,48 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Advanced Typing Speed Tester</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header>
-    <button id="toggleMode">Toggle Mode</button>
-  </header>
-
-  <section class="typing-test">
-    <h2>Typing Test</h2>
-    <textarea id="typingInput" placeholder="Type here..." disabled></textarea>
-    <div class="info">
-      <p>Speed (WPM): <span id="speed">0</span></p>
-      <p>Accuracy: <span id="accuracy">0%</span></p>
-      <p>Wrong Words: <span id="wrongCount">0</span></p>
-    </div>
-    <div id="missedAlert" class="alert"></div>
-    <p>Press <strong>Enter</strong> to start/end the test.</p>
-  </section>
-
-  <section class="graph">
-    <canvas id="trendChart"></canvas>
-  </section>
-
-  <section class="leaderboard">
-    <h3>🏆 Leaderboard (Top 5 WPM)</h3>
-    <table>
-      <thead><tr><th>Date</th><th>WPM</th><th>Accuracy</th></tr></thead>
-      <tbody id="leaderboardBody"></tbody>
-    </table>
-  </section>
-
-  <section class="calendar-wrapper" id="calendarWrapper">
-    <div class="calendar-controls">
-      <button id="prevMonth">&lt;</button>
-      <span id="monthYear"></span>
-      <button id="nextMonth">&gt;</button>
-    </div>
-    <div id="calendar" class="calendar"></div>
-  </section>
-
+  <title>Typing Speed Tester</title>
+  <link rel="stylesheet" href="style.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="theme-default">
+  <div class="container">
+    <h1>Typing Speed Tester</h1>
+
+    <div class="controls">
+      <button onclick="toggleTheme()">Switch Theme</button>
+      <select id="timer-select">
+        <option value="30">30 sec</option>
+        <option value="60" selected>1 min</option>
+        <option value="120">2 min</option>
+        <option value="300">5 min</option>
+        <option value="600">10 min</option>
+      </select>
+      <button onclick="resetTest()">Reset</button>
+    </div>
+
+    <p id="missed-days-msg"></p>
+
+    <textarea id="test-area" placeholder="Start your test..." disabled></textarea>
+
+    <div class="stats">
+      WPM: <span id="wpm">0</span> |
+      Accuracy: <span id="accuracy">0%</span> |
+      Wrong: <span id="wrong-words">0</span>
+    </div>
+
+    <div class="calendar-compact" id="calendar-box"></div>
+
+    <canvas id="performanceChart"></canvas>
+
+    <h2>🏆 Leaderboard (Time Only)</h2>
+    <table><thead><tr><th>Time</th><th>WPM</th><th>Acc</th></tr></thead>
+      <tbody id="leaderboard-body"></tbody></table>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
