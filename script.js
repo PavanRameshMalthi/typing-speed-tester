@@ -1,11 +1,34 @@
 let isRunning = false;
 let startTime, timer, testDuration = 60;
-let loginDays = JSON.parse(localStorage.getItem('loginDays') || '[]');
+let loginDays = JSON.parse(localStorage.getItem("loginDays") || "[]");
+let history = JSON.parse(localStorage.getItem("typingHistory") || "[]");
 
 const testInput = document.getElementById("testInput");
 const wpmEl = document.getElementById("wpm");
 const accEl = document.getElementById("accuracy");
 const wrongEl = document.getElementById("wrong");
+
+const missedMsg = document.getElementById("missedMsg");
+const calendarBox = document.getElementById("calendarBox");
+const loginDaysCount = document.getElementById("loginDaysCount");
+const historyBody = document.getElementById("historyBody");
+const themeSelect = document.getElementById("themeSelect");
+const graphCtx = document.getElementById("graph").getContext("2d");
+
+const chart = new Chart(graphCtx, {
+  type: "line",
+  data: { labels: [], datasets: [
+      { label: "WPM", data: [], borderColor: "#007bff", fill: false },
+      { label: "Accuracy%", data: [], borderColor: "#28a745", fill: false }
+  ] },
+  options: { responsive: true, scales: { y: { beginAtZero: true } } }
+});
+
+themeSelect.addEventListener("change", switchColorTheme);
+
+document.getElementById("timeSelect").addEventListener("change", (e) => {
+  testDuration = +e.target.value;
+});
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -17,129 +40,124 @@ document.addEventListener("keydown", (e) => {
 function startTest() {
   isRunning = true;
   testInput.disabled = false;
-  testInput.focus();
   testInput.value = "";
-  startTime = new Date();
+  startTime = Date.now();
   timer = setTimeout(endTest, testDuration * 1000);
 }
 
 function endTest() {
+  if (!isRunning) return;
   isRunning = false;
   clearTimeout(timer);
   testInput.disabled = true;
-  calculateResults();
+
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  const words = testInput.value.trim().split(/\s+/).filter(Boolean);
+  const wpm = Math.round(words.length / (elapsed / 60));
+  const wrong = words.filter(w => !/^[a-zA-Z]+$/.test(w)).length;
+  const acc = words.length
+    ? Math.round(((words.length - wrong) / words.length) * 100)
+    : 100;
+
+  wpmEl.textContent = wpm;
+  accEl.textContent = acc + "%";
+  wrongEl.textContent = wrong;
+
+  chart.data.labels.push(new Date().toLocaleTimeString());
+  chart.data.datasets[0].data.push(wpm);
+  chart.data.datasets[1].data.push(acc);
+  chart.update();
+
   saveLogin();
+  saveHistory(elapsed, wpm, acc, wrong);
   renderCalendar();
-  updateLeaderboard();
+  renderHistory();
+  checkMissed();
 }
 
 function resetTest() {
+  clearTimeout(timer);
+  isRunning = false;
+  testInput.disabled = true;
   testInput.value = "";
   wpmEl.textContent = "0";
   accEl.textContent = "0%";
   wrongEl.textContent = "0";
-  document.getElementById("missedMsg").textContent = "";
 }
-
-function calculateResults() {
-  const words = testInput.value.trim().split(/\s+/);
-  const totalChars = testInput.value.length;
-  const minutes = testDuration / 60;
-  const wpm = Math.round((words.length / minutes));
-  let wrong = 0;
-
-  for (let word of words) {
-    if (!/^[a-zA-Z]+$/.test(word)) wrong++;
-  }
-
-  const accuracy = Math.max(0, Math.round(((words.length - wrong) / words.length) * 100));
-
-  wpmEl.textContent = wpm;
-  accEl.textContent = accuracy + "%";
-  wrongEl.textContent = wrong;
-
-  updateGraph(wpm, accuracy);
-  updateLeaderboard(wpm, accuracy);
-}
-
-function updateGraph(wpm, acc) {
-  const ctx = document.getElementById("graph").getContext("2d");
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['WPM', 'Accuracy'],
-      datasets: [{
-        label: 'Performance',
-        data: [wpm, acc],
-        borderColor: '#007bff',
-        backgroundColor: 'rgba(0,123,255,0.1)',
-        tension: 0.3
-      }]
-    },
-    options: { responsive: true }
-  });
-}
-
-function updateLeaderboard(wpm = 0, acc = 0) {
-  const lb = JSON.parse(localStorage.getItem("leaderboard") || "[]");
-  if (wpm && acc) lb.push({ time: new Date().toLocaleTimeString(), wpm, acc });
-  localStorage.setItem("leaderboard", JSON.stringify(lb.slice(-10)));
-
-  const body = document.getElementById("leaderboardBody");
-  body.innerHTML = "";
-  lb.slice(-10).reverse().forEach(entry => {
-    body.innerHTML += `<tr><td>${entry.time}</td><td>${entry.wpm}</td><td>${entry.acc}%</td></tr>`;
-  });
-}
-
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-  document.body.classList.toggle("light");
-}
-
-function switchColorTheme() {
-  const value = document.getElementById("themeSelect").value;
-  document.body.className = value;
-}
-
-document.getElementById("timeSelect").addEventListener("change", function() {
-  testDuration = parseInt(this.value);
-});
 
 function saveLogin() {
-  const now = new Date();
-  const key = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
-  if (!loginDays.includes(key)) loginDays.push(key);
-  localStorage.setItem("loginDays", JSON.stringify(loginDays));
+  const key = new Date().toISOString().split("T")[0];
+  if (!loginDays.includes(key)) {
+    loginDays.push(key);
+    localStorage.setItem("loginDays", JSON.stringify(loginDays));
+  }
 }
 
 function renderCalendar() {
-  const box = document.getElementById("calendarBox");
-  box.innerHTML = "";
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  let count = 0;
+  const now = new Date(), month = now.getMonth(), year = now.getFullYear();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  calendarBox.innerHTML = "";
+  let count = 0;
   for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${now.getFullYear()}-${now.getMonth() + 1}-${d}`;
+    const key = `${year}-${month + 1}-${d}`;
     const div = document.createElement("div");
     div.textContent = d;
     if (loginDays.includes(key)) {
       div.classList.add("marked");
       count++;
     }
-    box.appendChild(div);
+    calendarBox.appendChild(div);
   }
-  document.getElementById("loginDaysCount").textContent = count;
-
-  const lastLogin = loginDays[loginDays.length - 1];
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const missed = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
-  if (lastLogin !== missed) {
-    document.getElementById("missedMsg").textContent = "🔔 You missed a day!";
-  }
+  loginDaysCount.textContent = count;
 }
 
+function saveHistory(elapsed, wpm, acc, wrong) {
+  const entry = {
+    timestamp: new Date().toLocaleString(),
+    duration: elapsed,
+    wpm, acc, wrong
+  };
+  history.push(entry);
+  localStorage.setItem("typingHistory", JSON.stringify(history));
+}
+
+function renderHistory() {
+  historyBody.innerHTML = "";
+  history.forEach(h => {
+    historyBody.innerHTML += `
+      <tr>
+        <td>${h.timestamp}</td>
+        <td>${h.duration}</td>
+        <td>${h.wpm}</td>
+        <td>${h.acc}%</td>
+        <td>${h.wrong}</td>
+      </tr>`;
+  });
+}
+
+function checkMissed() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const key = yesterday.toISOString().split("T")[0];
+  missedMsg.textContent = loginDays.includes(key)
+    ? ""
+    : "🔔 You missed yesterday!";
+}
+
+function toggleTheme() {
+  const body = document.body;
+  if (body.className === "light") body.className = "dark";
+  else if (body.className === "dark") body.className = "colorful";
+  else body.className = "light";
+  themeSelect.value = body.className;
+}
+
+function switchColorTheme() {
+  document.body.className = themeSelect.value;
+}
+
+// Initial render
 renderCalendar();
-updateLeaderboard();
+renderHistory();
+checkMissed();

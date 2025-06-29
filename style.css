@@ -1,15 +1,13 @@
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   transition: background 0.3s, color 0.3s;
 }
-
 .container {
   padding: 20px;
-  max-width: 800px;
+  max-width: 900px;
   margin: auto;
 }
-
 textarea {
   width: 100%;
   height: 100px;
@@ -21,6 +19,7 @@ textarea {
 .controls select,
 .controls button {
   margin: 5px;
+  padding: 5px 10px;
 }
 
 .stats {
@@ -30,6 +29,7 @@ textarea {
 
 canvas {
   max-width: 100%;
+  height: 200px;
   margin-top: 20px;
 }
 
@@ -47,7 +47,7 @@ canvas {
 #calendarBox div {
   text-align: center;
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   border-radius: 5px;
 }
 
@@ -56,7 +56,7 @@ canvas {
   color: white;
 }
 
-.leaderboard {
+.history-container {
   margin-top: 30px;
 }
 
@@ -72,25 +72,35 @@ th, td {
 }
 
 /* Theme Colors */
-.light {
+body.light {
   background: #ffffff;
   color: #333333;
 }
 
-.dark {
+body.dark {
   background: #121212;
   color: #eeeeee;
 }
 
-.colorful {
-  background: #f0f8ff;
-  color: #222;
+body.colorful {
+  background: #ffefd5;
+  color: #333333;
 }
 
-.highlight {
+/* Stats highlight */
+.light #wpm,
+.colorful #wpm {
   color: #007bff;
 }
-
-.dark .highlight {
+.dark #wpm {
   color: #66d9ef;
+}
+.light #accuracy {
+  color: #28a745;
+}
+.dark #accuracy {
+  color: #33cc33;
+}
+.colorful #accuracy {
+  color: #ff4500;
 }
