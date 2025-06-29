@@ -1,224 +1,181 @@
-// =======================
-// 🌙 Dark/Light Mode Toggle
-// =======================
+// Theme toggle
 const body = document.body;
-const toggleBtn = document.getElementById('toggleMode');
-const savedMode = localStorage.getItem('theme') || 'dark';
-body.classList.add(savedMode);
+const theme = localStorage.getItem('theme') || 'dark';
+body.classList.add(theme);
 
-toggleBtn.addEventListener('click', () => {
+document.getElementById('toggleMode').addEventListener('click', () => {
   body.classList.toggle('dark');
   body.classList.toggle('light');
-  const mode = body.classList.contains('dark') ? 'dark' : 'light';
-  localStorage.setItem('theme', mode);
+  localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
 });
 
-// =======================
-// ✍️ Typing Test Setup
-// =======================
-const typingArea = document.getElementById('typingArea');
-const timeDisplay = document.getElementById('timeDisplay');
-const speedDisplay = document.getElementById('speed');
-const accuracyDisplay = document.getElementById('accuracy');
-const errorDisplay = document.getElementById('errors');
+// Typing Test variables
+const typingInput = document.getElementById('typingInput');
+const speedEl = document.getElementById('speed');
+const accuracyEl = document.getElementById('accuracy');
+const wrongCountEl = document.getElementById('wrongCount');
 const missedAlert = document.getElementById('missedAlert');
 
-let startTime, interval, started = false;
-let errorCount = 0, totalTyped = 0;
+let started = false, startTime = 0;
+let loginDates = JSON.parse(localStorage.getItem('loginDates') || '[]');
 
-// Load or initialize login dates
-let loginDates = JSON.parse(localStorage.getItem('loginDates')) || [];
+// Sample dictionary
+const dictionary = ['hello', 'world', 'typing', 'test', 'speed', 'accuracy', 'practice', 'code'];
 
-// Start or End Typing Test on Enter
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Enter' && !started) {
+typingInput.addEventListener('input', updateTypingStats);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
     e.preventDefault();
-    startTyping();
-  } else if (e.key === 'Enter' && started) {
-    e.preventDefault();
-    endTyping();
+    started ? endTyping() : startTyping();
   }
-});
-
-typingArea.addEventListener('input', () => {
-  const words = typingArea.value.trim().split(/\s+/);
-  const totalWords = words.length;
-  totalTyped++;
-
-  const wrongWords = words.filter(w => !dictionary.includes(w.toLowerCase()));
-  errorCount = wrongWords.length;
-
-  const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
-  const wpm = Math.round(totalWords / timeElapsed);
-  const accuracy = Math.round(((totalTyped - errorCount) / totalTyped) * 100);
-
-  speedDisplay.textContent = isFinite(wpm) ? wpm : 0;
-  accuracyDisplay.textContent = isFinite(accuracy) ? accuracy : 100;
-  errorDisplay.textContent = errorCount;
-
-  updateGraph(wpm, accuracy);
 });
 
 function startTyping() {
   started = true;
-  typingArea.disabled = false;
-  typingArea.focus();
-  typingArea.value = '';
+  typingInput.disabled = false;
+  typingInput.value = '';
   startTime = Date.now();
-  errorCount = 0;
-  totalTyped = 0;
-  interval = setInterval(updateTime, 1000);
-  updateTime();
-
-  recordLoginDay();
+  missedAlert.textContent = '';
+  updateTypingStats();
 }
 
 function endTyping() {
   started = false;
-  clearInterval(interval);
-  typingArea.disabled = true;
-
-  const date = new Date().toLocaleDateString();
-  const speed = parseInt(speedDisplay.textContent);
-  const accuracy = parseInt(accuracyDisplay.textContent);
-  updateLeaderboard(date, speed, accuracy);
+  typingInput.disabled = true;
+  recordToday();
+  updateLeaderboard();
+  updateChart();
+  checkMissed();
 }
 
-function updateTime() {
-  const seconds = Math.floor((Date.now() - startTime) / 1000);
-  const minutes = Math.floor(seconds / 60);
-  timeDisplay.textContent = `${minutes}m ${seconds % 60}s`;
-}
+// WPM & accuracy logic
+function updateTypingStats() {
+  if (!started) return;
+  const text = typingInput.value.trim();
+  const words = text ? text.split(/\s+/) : [];
+  const elapsedMin = (Date.now() - startTime) / 60000;
 
-// =======================
-// 📅 Calendar
-// =======================
-const calendar = document.getElementById('calendar');
-const monthYear = document.getElementById('monthYear');
-const prevMonth = document.getElementById('prevMonth');
-const nextMonth = document.getElementById('nextMonth');
-
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-
-function generateCalendar(month, year) {
-  calendar.innerHTML = '';
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const daysArray = Array(firstDay).fill('').concat([...Array(daysInMonth).keys()].map(d => d + 1));
-
-  daysArray.forEach(day => {
-    const div = document.createElement('div');
-    div.className = 'calendar-day';
-    if (day) {
-      div.textContent = day;
-
-      const dateKey = `${year}-${month + 1}-${day}`;
-      if (loginDates.includes(dateKey)) {
-        div.classList.add('marked');
-      }
-    }
-    calendar.appendChild(div);
+  let correct = 0;
+  words.forEach(w => {
+    if (dictionary.includes(w.toLowerCase())) correct++;
   });
 
-  const dateText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
-  monthYear.textContent = dateText;
+  const wpm = elapsedMin > 0 ? Math.round(correct / elapsedMin) : 0;
+  const accuracy = words.length > 0 ? Math.round((correct / words.length) * 100) : 0;
+
+  speedEl.textContent = wpm;
+  accuracyEl.textContent = accuracy + '%';
+  wrongCountEl.textContent = words.length - correct;
 }
 
-function recordLoginDay() {
+// Record login-day
+function recordToday() {
   const now = new Date();
-  const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-  if (!loginDates.includes(today)) {
-    loginDates.push(today);
+  const key = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  if (!loginDates.includes(key)) {
+    loginDates.push(key);
     localStorage.setItem('loginDates', JSON.stringify(loginDates));
-    checkMissedDays();
   }
-  generateCalendar(currentMonth, currentYear);
+  renderCalendar(currentMonth, currentYear);
 }
 
-prevMonth.onclick = () => {
-  currentMonth = (currentMonth - 1 + 12) % 12;
-  if (currentMonth === 11) currentYear--;
-  generateCalendar(currentMonth, currentYear);
-};
-
-nextMonth.onclick = () => {
-  currentMonth = (currentMonth + 1) % 12;
-  if (currentMonth === 0) currentYear++;
-  generateCalendar(currentMonth, currentYear);
-};
-
-function checkMissedDays() {
+// Missed-day alert
+function checkMissed() {
   const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`;
-  if (!loginDates.includes(yesterdayKey)) {
-    missedAlert.textContent = "🔔 You missed a day!";
-  } else {
-    missedAlert.textContent = "";
-  }
+  const y = new Date(today);
+  y.setDate(y.getDate() - 1);
+  const key = `${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;
+  missedAlert.textContent = loginDates.includes(key) ? '' : '🔔 You missed yesterday!';
 }
 
-// =======================
-// 📈 Chart.js: Graph Display
-// =======================
+// Leaderboard
+function updateLeaderboard() {
+  let sessions = JSON.parse(localStorage.getItem('sessions') || '[]');
+  sessions.push({
+    date: new Date().toLocaleDateString(),
+    wpm: parseInt(speedEl.textContent),
+    acc: parseInt(accuracyEl.textContent)
+  });
+  sessions.sort((a,b)=>b.wpm - a.wpm);
+  sessions = sessions.slice(0,5);
+  localStorage.setItem('sessions', JSON.stringify(sessions));
+
+  const tbody = document.getElementById('leaderboardBody');
+  tbody.innerHTML = '';
+  sessions.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.date}</td><td>${s.wpm}</td><td>${s.acc}%</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// Chart
 const ctx = document.getElementById('trendChart').getContext('2d');
-let trendChart = new Chart(ctx, {
+const chart = new Chart(ctx, {
   type: 'line',
-  data: {
-    labels: [],
-    datasets: [
-      {
-        label: 'Speed (WPM)',
-        data: [],
-        borderColor: '#007bff',
-        fill: false
-      },
-      {
-        label: 'Accuracy (%)',
-        data: [],
-        borderColor: '#28a745',
-        fill: false
-      }
-    ]
-  }
+  data: { labels: [], datasets: [
+    { label: 'WPM', data: [], borderColor: 'var(--primary-dark)', fill: false },
+    { label: 'Accuracy', data: [], borderColor: '#28a745', fill: false },
+  ]},
+  options: { scales: { y: { beginAtZero: true } } }
 });
 
-function updateGraph(speed, accuracy) {
-  const now = new Date().toLocaleTimeString();
-  trendChart.data.labels.push(now);
-  trendChart.data.datasets[0].data.push(speed);
-  trendChart.data.datasets[1].data.push(accuracy);
-  trendChart.update();
+function updateChart() {
+  const sessions = JSON.parse(localStorage.getItem('sessions') || '[]').slice().reverse();
+  chart.data.labels = sessions.map(s => s.date);
+  chart.data.datasets[0].data = sessions.map(s => s.wpm);
+  chart.data.datasets[1].data = sessions.map(s => s.acc);
+  chart.update();
 }
 
-// =======================
-// 🏆 Leaderboard
-// =======================
-function updateLeaderboard(date, wpm, accuracy) {
-  const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-  leaderboard.push({ date, wpm, accuracy });
-  leaderboard.sort((a, b) => b.wpm - a.wpm);
-  const top5 = leaderboard.slice(0, 5);
-  localStorage.setItem('leaderboard', JSON.stringify(top5));
-  displayLeaderboard(top5);
+// Calendar
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+const calendarEl = document.getElementById('calendar');
+
+function renderCalendar(m, y) {
+  calendarEl.innerHTML = '';
+  const firstDay = new Date(y, m, 1).getDay();
+  const days = new Date(y, m+1, 0).getDate();
+  document.getElementById('monthYear').textContent =
+    new Date(y, m).toLocaleString('default',{month:'long',year:'numeric'});
+
+  for (let i = 0; i < firstDay; i++) calendarEl.appendChild(document.createElement('div'));
+  for (let d = 1; d <= days; d++) {
+    const div = document.createElement('div');
+    div.className = 'calendar-day';
+    div.textContent = d;
+    const key = `${y}-${m+1}-${d}`;
+    if (loginDates.includes(key)) div.classList.add('marked');
+    calendarEl.appendChild(div);
+  }
 }
 
-function displayLeaderboard(entries) {
-  const tbody = document.querySelector('#leaderboard tbody');
-  tbody.innerHTML = '';
-  entries.forEach(e => {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td>${e.date}</td><td>${e.wpm}</td><td>${e.accuracy}%</td>`;
-    tbody.appendChild(row);
-  });
-}
+document.getElementById('prevMonth').onclick = () => {
+  currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar(currentMonth, currentYear);
+};
+document.getElementById('nextMonth').onclick = () => {
+  currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar(currentMonth, currentYear);
+};
+let sx = 0;
+document.getElementById('calendarWrapper').addEventListener('mousedown', e => sx = e.clientX);
+document.getElementById('calendarWrapper').addEventListener('mouseup', e => {
+  const dx = e.clientX - sx;
+  if (dx > 50) document.getElementById('prevMonth').click();
+  else if (dx < -50) document.getElementById('nextMonth').click();
+});
+document.getElementById('calendarWrapper').addEventListener('touchstart', e => sx = e.touches[0].clientX);
+document.getElementById('calendarWrapper').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - sx;
+  if (dx > 50) document.getElementById('prevMonth').click();
+  else if (dx < -50) document.getElementById('nextMonth').click();
+});
 
-
-
-// Initialize everything
-generateCalendar(currentMonth, currentYear);
-displayLeaderboard(JSON.parse(localStorage.getItem('leaderboard')) || []);
-checkMissedDays();
+// Initialization
+renderCalendar(currentMonth, currentYear);
+updateLeaderboard();
+updateChart();
+checkMissed();

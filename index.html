@@ -3,45 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Typing Speed Tester</title>
+  <title>Advanced Typing Speed Tester</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button id="toggleMode">🌙 Toggle Mode</button>
+  <header>
+    <button id="toggleMode">Toggle Mode</button>
+  </header>
 
-  <div class="typing-container">
+  <section class="typing-test">
     <h2>Typing Test</h2>
-    <textarea id="typingArea" placeholder="Start typing here..." disabled></textarea>
+    <textarea id="typingInput" placeholder="Type here..." disabled></textarea>
     <div class="info">
-      <p>⏱ Time: <span id="timeDisplay">0s</span></p>
-      <p>🚀 Speed: <span id="speed">0</span> WPM</p>
-      <p>🎯 Accuracy: <span id="accuracy">0</span>%</p>
-      <p>❌ Errors: <span id="errors">0</span></p>
+      <p>Speed (WPM): <span id="speed">0</span></p>
+      <p>Accuracy: <span id="accuracy">0%</span></p>
+      <p>Wrong Words: <span id="wrongCount">0</span></p>
     </div>
-    <p class="note">Press <strong>Enter</strong> to Start/Stop</p>
     <div id="missedAlert" class="alert"></div>
-  </div>
+    <p>Press <strong>Enter</strong> to start/end the test.</p>
+  </section>
 
-  <div class="graph-container">
+  <section class="graph">
     <canvas id="trendChart"></canvas>
-  </div>
+  </section>
 
-  <div class="leaderboard-container">
+  <section class="leaderboard">
     <h3>🏆 Leaderboard (Top 5 WPM)</h3>
-    <table id="leaderboard">
+    <table>
       <thead><tr><th>Date</th><th>WPM</th><th>Accuracy</th></tr></thead>
-      <tbody></tbody>
+      <tbody id="leaderboardBody"></tbody>
     </table>
-  </div>
+  </section>
 
-  <div class="calendar-wrapper" id="calendarWrapper">
+  <section class="calendar-wrapper" id="calendarWrapper">
     <div class="calendar-controls">
       <button id="prevMonth">&lt;</button>
       <span id="monthYear"></span>
       <button id="nextMonth">&gt;</button>
     </div>
-    <div id="calendar"></div>
-  </div>
+    <div id="calendar" class="calendar"></div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
