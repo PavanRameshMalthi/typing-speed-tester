@@ -1,143 +1,145 @@
-const testArea = document.getElementById('testArea'),
-      wpmEl = document.getElementById('wpm'),
-      accEl = document.getElementById('accuracy'),
-      wrongEl = document.getElementById('wrong'),
-      lbBody = document.getElementById('leaderboardBody'),
-      calBox = document.getElementById('calendarBox'),
-      missedMsg = document.getElementById('missedMsg'),
-      timerSelect = document.getElementById('timerSelect');
+let isRunning = false;
+let startTime, timer, testDuration = 60;
+let loginDays = JSON.parse(localStorage.getItem('loginDays') || '[]');
 
-let timerDur = 60, timer, isRunning = false, startTS;
-let labels = [], wpmData = [], accData = [], loginDays = JSON.parse(localStorage.getItem('loginDays') || '[]');
+const testInput = document.getElementById("testInput");
+const wpmEl = document.getElementById("wpm");
+const accEl = document.getElementById("accuracy");
+const wrongEl = document.getElementById("wrong");
 
-const ctx = document.getElementById('chart').getContext('2d');
-const chart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels,
-    datasets: [
-      { label: 'WPM', data: wpmData, borderColor: '#66d9ef', backgroundColor: 'rgba(102,217,239,0.2)', fill: true },
-      { label: 'Accuracy%', data: accData, borderColor: '#33cc33', backgroundColor: 'rgba(51,204,51,0.2)', fill: true }
-    ]
-  },
-  options: { responsive: true, scales: { y: { beginAtZero: true } } }
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    if (!isRunning) startTest();
+    else endTest();
+  }
 });
 
-timerSelect.addEventListener('change', () => timerDur = +timerSelect.value);
-
 function startTest() {
-  if (isRunning) return;
   isRunning = true;
-  testArea.disabled = false;
-  testArea.value = '';
-  testArea.focus();
-  startTS = Date.now();
-  timer = setTimeout(endTest, timerDur * 1000);
+  testInput.disabled = false;
+  testInput.focus();
+  testInput.value = "";
+  startTime = new Date();
+  timer = setTimeout(endTest, testDuration * 1000);
 }
 
 function endTest() {
-  if (!isRunning) return;
   isRunning = false;
-  testArea.disabled = true;
   clearTimeout(timer);
-
-  const words = testArea.value.trim().split(/\s+/).filter(Boolean);
-  const wpm = Math.round(words.length / (timerDur / 60));
-  const wrong = Math.floor(words.length / 10);
-  const acc = words.length ? Math.round((words.length - wrong) / words.length * 100) : 100;
-
-  wpmEl.textContent = wpm;
-  accEl.textContent = acc + '%';
-  wrongEl.textContent = wrong;
-
-  const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const sessions = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-  sessions.push({ time: t, wpm, acc });
-  localStorage.setItem('leaderboard', JSON.stringify(sessions));
-  updateLeaderboard();
-
-  const todayKey = new Date().toISOString().split('T')[0];
-  if (!loginDays.includes(todayKey)) {
-    loginDays.push(todayKey);
-    localStorage.setItem('loginDays', JSON.stringify(loginDays));
-  }
-
-  labels.push(t);
-  wpmData.push(wpm);
-  accData.push(acc);
-  chart.update();
-
+  testInput.disabled = true;
+  calculateResults();
+  saveLogin();
   renderCalendar();
-  checkMissed();
+  updateLeaderboard();
 }
 
 function resetTest() {
-  clearTimeout(timer);
-  isRunning = false;
-  testArea.disabled = true;
-  testArea.value = '';
-  wpmEl.textContent = '0'; accEl.textContent = '0%'; wrongEl.textContent = '0';
+  testInput.value = "";
+  wpmEl.textContent = "0";
+  accEl.textContent = "0%";
+  wrongEl.textContent = "0";
+  document.getElementById("missedMsg").textContent = "";
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    isRunning ? endTest() : startTest();
+function calculateResults() {
+  const words = testInput.value.trim().split(/\s+/);
+  const totalChars = testInput.value.length;
+  const minutes = testDuration / 60;
+  const wpm = Math.round((words.length / minutes));
+  let wrong = 0;
+
+  for (let word of words) {
+    if (!/^[a-zA-Z]+$/.test(word)) wrong++;
   }
-});
 
-function switchTheme() {
-  const themes = ['theme-default', 'theme-light', 'theme-ocean'];
-  const cur = document.body.className;
-  const i = themes.indexOf(cur);
-  document.body.className = themes[(i + 1) % themes.length];
+  const accuracy = Math.max(0, Math.round(((words.length - wrong) / words.length) * 100));
+
+  wpmEl.textContent = wpm;
+  accEl.textContent = accuracy + "%";
+  wrongEl.textContent = wrong;
+
+  updateGraph(wpm, accuracy);
+  updateLeaderboard(wpm, accuracy);
 }
 
-function updateLeaderboard() {
-  const sessions = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-  lbBody.innerHTML = sessions.map(s => `<tr><td>${s.time}</td><td>${s.wpm}</td><td>${s.acc}%</td></tr>`).join('');
-}
-
-function renderCalendar() {
-  const dt = new Date(), m = dt.getMonth(), y = dt.getFullYear();
-  const firstDay = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
-
-  let html = `<div class="calendar-header">${dt.toLocaleString('default', { month: 'long', year: 'numeric' })}</div>`;
-  html += '<div class="calendar-weekdays">';
-  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => html += `<div>${d}</div>`);
-  html += '</div><div class="calendar-days">';
-
-  for (let i = 0; i < firstDay; i++) html += '<div></div>';
-  for (let d = 1; d <= days; d++) {
-    const key = `${y}-${m + 1}-${d}`;
-    html += `<div class="day${loginDays.includes(key) ? ' marked' : ''}">${d}</div>`;
-  }
-  html += '</div>';
-
-  calBox.innerHTML = html;
-
-  const grid = calBox.querySelector('.calendar-days');
-  let sx = 0;
-  grid.addEventListener('mousedown', e => sx = e.clientX);
-  grid.addEventListener('mouseup', e => {
-    const dx = e.clientX - sx;
-    grid.style.transform = `translateX(${dx / 3}px)`;
-    setTimeout(() => grid.style.transform = 'translateX(0)', 200);
+function updateGraph(wpm, acc) {
+  const ctx = document.getElementById("graph").getContext("2d");
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['WPM', 'Accuracy'],
+      datasets: [{
+        label: 'Performance',
+        data: [wpm, acc],
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0,123,255,0.1)',
+        tension: 0.3
+      }]
+    },
+    options: { responsive: true }
   });
 }
 
-function checkMissed() {
-  const today = new Date();
-  let missed = 0;
-  for (let i = 1; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const key = d.toISOString().split('T')[0];
-    if (!loginDays.includes(key)) missed++;
-  }
-  missedMsg.textContent = missed ? `🔔 You missed ${missed} day(s) this week.` : '';
+function updateLeaderboard(wpm = 0, acc = 0) {
+  const lb = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+  if (wpm && acc) lb.push({ time: new Date().toLocaleTimeString(), wpm, acc });
+  localStorage.setItem("leaderboard", JSON.stringify(lb.slice(-10)));
+
+  const body = document.getElementById("leaderboardBody");
+  body.innerHTML = "";
+  lb.slice(-10).reverse().forEach(entry => {
+    body.innerHTML += `<tr><td>${entry.time}</td><td>${entry.wpm}</td><td>${entry.acc}%</td></tr>`;
+  });
 }
 
-updateLeaderboard();
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  document.body.classList.toggle("light");
+}
+
+function switchColorTheme() {
+  const value = document.getElementById("themeSelect").value;
+  document.body.className = value;
+}
+
+document.getElementById("timeSelect").addEventListener("change", function() {
+  testDuration = parseInt(this.value);
+});
+
+function saveLogin() {
+  const now = new Date();
+  const key = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  if (!loginDays.includes(key)) loginDays.push(key);
+  localStorage.setItem("loginDays", JSON.stringify(loginDays));
+}
+
+function renderCalendar() {
+  const box = document.getElementById("calendarBox");
+  box.innerHTML = "";
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let count = 0;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${now.getFullYear()}-${now.getMonth() + 1}-${d}`;
+    const div = document.createElement("div");
+    div.textContent = d;
+    if (loginDays.includes(key)) {
+      div.classList.add("marked");
+      count++;
+    }
+    box.appendChild(div);
+  }
+  document.getElementById("loginDaysCount").textContent = count;
+
+  const lastLogin = loginDays[loginDays.length - 1];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const missed = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+  if (lastLogin !== missed) {
+    document.getElementById("missedMsg").textContent = "🔔 You missed a day!";
+  }
+}
+
 renderCalendar();
-checkMissed();
+updateLeaderboard();
