@@ -1,58 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Typing Speed Tester</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="light">
+<body>
   <div class="container">
-    <h1>Typing Speed Tester</h1>
+    <header>
+      <h1>Typing Speed Tester</h1>
+      <div class="theme-toggle">
+        <label for="themeSelect">Theme:</label>
+        <select id="themeSelect">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="blue">Blue Theme</option>
+          <option value="classic">Classic Theme</option>
+        </select>
+      </div>
+    </header>
 
-    <div class="controls">
-      <button onclick="toggleTheme()">Toggle Theme</button>
-      <select id="themeSelect" onchange="switchColorTheme()">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="colorful">Colorful</option>
+    <section class="controls">
+      <select id="languageSelect">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="telugu">Telugu</option>
       </select>
-      <select id="timeSelect">
-        <option value="30">30 sec</option>
-        <option value="60" selected>1 min</option>
-        <option value="120">2 min</option>
-        <option value="300">5 min</option>
-        <option value="600">10 min</option>
-      </select>
-      <button onclick="resetTest()">Reset</button>
-    </div>
+      <input type="number" id="testDuration" min="30" max="600" step="30" value="60" />
+      <button id="startBtn">Start</button>
+      <button id="endBtn">End</button>
+      <button id="retestBtn">Retest</button>
+    </section>
 
-    <p id="missedMsg"></p>
+    <section class="typing-area">
+      <div id="paragraphDisplay"></div>
+      <textarea id="typingInput" placeholder="Start typing here..."></textarea>
+    </section>
 
-    <textarea id="testInput" placeholder="Type here..." disabled></textarea>
-    <div class="stats">
-      <span>WPM: <span id="wpm">0</span></span> |
-      <span>Accuracy: <span id="accuracy">0%</span></span> |
-      <span>Wrong: <span id="wrong">0</span></span>
-    </div>
+    <section class="results">
+      <p><strong>Time Left:</strong> <span id="timeDisplay">60s</span></p>
+      <p><strong>WPM:</strong> <span id="wpm">0</span></p>
+      <p><strong>Accuracy:</strong> <span id="accuracy">0%</span></p>
+      <p><strong>Correct Words:</strong> <span id="correctWords">0</span></p>
+      <p><strong>Wrong Words:</strong> <span id="wrongWords">0</span></p>
+      <p><strong>Most Mistakes:</strong> <span id="mistakeWords">-</span></p>
+    </section>
 
-    <canvas id="graph"></canvas>
+    <section class="chart-section">
+      <canvas id="wpmChart"></canvas>
+    </section>
 
-    <div class="calendar-container">
-      <h2>📅 Login Calendar</h2>
-      <div id="calendarBox" class="calendar-compact"></div>
-      <p>Total login days: <span id="loginDaysCount">0</span></p>
-    </div>
+    <section class="calendar-section">
+      <h2>Typing Calendar</h2>
+      <div id="calendarContainer"></div>
+    </section>
 
-    <div class="history-container">
-      <h2>📋 Typing History & Performance</h2>
-      <table>
-        <thead><tr><th>Date & Time</th><th>Duration (s)</th><th>WPM</th><th>Accuracy</th><th>Wrong Words</th></tr></thead>
-        <tbody id="historyBody"></tbody>
-      </table>
-    </div>
+    <section class="history-section">
+      <h2>Typing History & Performance</h2>
+      <ul id="historyList"></ul>
+    </section>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
