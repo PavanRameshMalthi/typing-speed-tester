@@ -9,12 +9,11 @@
   --primary-dark: #66d9ef;
   --secondary-bg-dark: #1e1e1e;
 
-  /* New highlight colors */
-  --speed-color-light: #0056b3;      /* Dark blue */
-  --accuracy-color-light: #1c7c2b;   /* Dark green */
+  --speed-color-light: #0056b3;
+  --accuracy-color-light: #1c7c2b;
 
-  --speed-color-dark: #a2dffe;       /* Light cyan */
-  --accuracy-color-dark: #b3ff66;    /* Light lime */
+  --speed-color-dark: #a2dffe;
+  --accuracy-color-dark: #b3ff66;
 }
 
 body {
@@ -76,7 +75,6 @@ textarea {
   font-weight: bold;
 }
 
-/* Updated highlights */
 #speed {
   font-weight: bold;
   color: var(--speed-color-dark);
