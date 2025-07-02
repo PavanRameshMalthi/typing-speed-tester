@@ -2,65 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Typing Speed Tester</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body data-theme="dark">
   <div class="container">
     <header>
       <h1>Typing Speed Tester</h1>
-      <div class="theme-toggle">
-        <label for="themeSelect">Theme:</label>
-        <select id="themeSelect">
+      <div class="theme-select">
+        <label>Theme:</label>
+        <select id="themeToggle">
           <option value="system">System</option>
           <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="blue">Blue Theme</option>
-          <option value="classic">Classic Theme</option>
+          <option value="dark" selected>Dark</option>
+          <option value="blue">Blue</option>
+          <option value="classic">Classic</option>
+        </select>
+      </div>
+      <div class="lang-select">
+        <label>Language:</label>
+        <select id="languageSelect">
+          <option value="english" selected>English</option>
+          <option value="hindi">Hindi</option>
+          <option value="telugu">Telugu</option>
         </select>
       </div>
     </header>
 
-    <section class="controls">
-      <select id="languageSelect">
-        <option value="english">English</option>
-        <option value="hindi">Hindi</option>
-        <option value="telugu">Telugu</option>
-      </select>
-      <input type="number" id="testDuration" min="30" max="600" step="30" value="60" />
-      <button id="startBtn">Start</button>
-      <button id="endBtn">End</button>
-      <button id="retestBtn">Retest</button>
-    </section>
-
-    <section class="typing-area">
-      <div id="paragraphDisplay"></div>
-      <textarea id="typingInput" placeholder="Start typing here..."></textarea>
+    <section class="typing-box">
+      <div id="paragraph">The quick brown fox jumps over the lazy dog.</div>
+      <textarea id="inputBox" placeholder="Start typing here..." disabled></textarea>
+      <div class="controls">
+        <input type="number" id="timeInput" min="30" max="600" value="60"/> seconds
+        <button id="startBtn">Start</button>
+        <button id="endBtn">End</button>
+        <button id="retestBtn">Re-test</button>
+      </div>
     </section>
 
     <section class="results">
-      <p><strong>Time Left:</strong> <span id="timeDisplay">60s</span></p>
       <p><strong>WPM:</strong> <span id="wpm">0</span></p>
       <p><strong>Accuracy:</strong> <span id="accuracy">0%</span></p>
       <p><strong>Correct Words:</strong> <span id="correctWords">0</span></p>
       <p><strong>Wrong Words:</strong> <span id="wrongWords">0</span></p>
-      <p><strong>Most Mistakes:</strong> <span id="mistakeWords">-</span></p>
+      <p><strong>Most Mistaken Word:</strong> <span id="mistakenWord">None</span></p>
     </section>
 
-    <section class="chart-section">
-      <canvas id="wpmChart"></canvas>
+    <section class="graph">
+      <canvas id="performanceChart"></canvas>
+    </section>
+
+    <section class="history">
+      <h2>Typing History (Last 10)</h2>
+      <ul id="historyList"></ul>
     </section>
 
     <section class="calendar-section">
-      <h2>Typing Calendar</h2>
+      <h2>Calendar</h2>
       <div id="calendarContainer"></div>
-    </section>
-
-    <section class="history-section">
-      <h2>Typing History & Performance</h2>
-      <ul id="historyList"></ul>
     </section>
   </div>
 
